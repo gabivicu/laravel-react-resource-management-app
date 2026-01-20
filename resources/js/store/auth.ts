@@ -1,0 +1,119 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { User, Organization } from '@/types';
+import api from '@/services/api';
+
+interface AuthState {
+    user: User | null;
+    currentOrganization: Organization | null;
+    token: string | null;
+    isAuthenticated: boolean;
+    setUser: (user: User) => void;
+    setToken: (token: string) => void;
+    setCurrentOrganization: (organization: Organization) => void;
+    login: (email: string, password: string) => Promise<void>;
+    register: (data: any) => Promise<void>;
+    logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+    persist(
+        (set) => ({
+            user: null,
+            currentOrganization: null,
+            token: null,
+            isAuthenticated: false,
+
+            setUser: (user) => {
+                set({ user, isAuthenticated: true });
+                localStorage.setItem('auth_token', user.id.toString());
+            },
+
+            setToken: (token) => {
+                set({ token });
+                localStorage.setItem('auth_token', token);
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            },
+
+            setCurrentOrganization: (organization) => {
+                set({ currentOrganization: organization });
+                localStorage.setItem('tenant_id', organization.id.toString());
+            },
+
+            login: async (email: string, password: string) => {
+                try {
+                    const response = await api.post<{ data: { user: User; token: string; organization: Organization } }>('/auth/login', {
+                        email,
+                        password,
+                    });
+
+                    const { user, token, organization } = response.data.data;
+
+                    // Salvăm token-ul în localStorage imediat
+                    localStorage.setItem('auth_token', token);
+                    if (organization) {
+                        localStorage.setItem('tenant_id', organization.id.toString());
+                    }
+                    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                    // Actualizăm starea Zustand
+                    set({
+                        user,
+                        token,
+                        currentOrganization: organization,
+                        isAuthenticated: true,
+                    });
+                } catch (error) {
+                    throw error;
+                }
+            },
+
+            register: async (data: any) => {
+                try {
+                    const response = await api.post<{ data: { user: User; token: string; organization: Organization } }>('/auth/register', data);
+
+                    const { user, token, organization } = response.data.data;
+
+                    // Salvăm token-ul în localStorage imediat
+                    localStorage.setItem('auth_token', token);
+                    if (organization) {
+                        localStorage.setItem('tenant_id', organization.id.toString());
+                    }
+                    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                    // Actualizăm starea Zustand
+                    set({
+                        user,
+                        token,
+                        currentOrganization: organization,
+                        isAuthenticated: true,
+                    });
+                } catch (error) {
+                    throw error;
+                }
+            },
+
+            logout: () => {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('tenant_id');
+                delete api.defaults.headers.common['Authorization'];
+
+                set({
+                    user: null,
+                    currentOrganization: null,
+                    token: null,
+                    isAuthenticated: false,
+                });
+            },
+        }),
+        {
+            name: 'auth-storage',
+            partialize: (state) => ({
+                user: state.user,
+                currentOrganization: state.currentOrganization,
+                token: state.token,
+                isAuthenticated: state.isAuthenticated,
+            }),
+        }
+    )
+);
