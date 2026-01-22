@@ -40,7 +40,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Organizațiile cărora le aparține utilizatorul
+     * Organizations that the user belongs to
      */
     public function organizations(): BelongsToMany
     {
@@ -64,6 +64,7 @@ class User extends Authenticatable
             'user_id',
             'role_id'
         )->wherePivot('organization_id', $organizationId)
+            ->wherePivot('role_id', '!=', null)
             ->withTimestamps();
     }
 
@@ -72,31 +73,27 @@ class User extends Authenticatable
      */
     public function hasRoleInOrganization(string $roleSlug, int $organizationId): bool
     {
-        return $this->organizations()
-            ->where('organizations.id', $organizationId)
-            ->whereHas('users', function ($query) use ($roleSlug) {
-                $query->whereHas('roles', function ($q) use ($roleSlug) {
-                    $q->where('slug', $roleSlug);
-                });
-            })
+        return $this->rolesInOrganization($organizationId)
+            ->where('slug', $roleSlug)
             ->exists();
     }
 
     /**
-     * Verifică dacă utilizatorul are o permisiune specifică într-o organizație
+     * Check if the user has a specific permission in an organization
      */
     public function hasPermissionInOrganization(string $permission, int $organizationId): bool
     {
-        return $this->organizations()
-            ->where('organizations.id', $organizationId)
-            ->whereHas('users', function ($query) use ($permission) {
-                $query->whereHas('roles', function ($q) use ($permission) {
-                    $q->whereHas('permissions', function ($p) use ($permission) {
-                        $p->where('slug', $permission);
-                    });
-                });
-            })
-            ->exists();
+        // Get user's roles in the organization
+        $roles = $this->rolesInOrganization($organizationId)->get();
+
+        // Check if any of the roles has the permission
+        foreach ($roles as $role) {
+            if ($role->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -50,6 +50,12 @@ class ResourceAllocationPolicy
             return false;
         }
 
+        // Users can always update their own allocations
+        if ($allocation->user_id === $user->id) {
+            return true;
+        }
+
+        // Otherwise, check if user has update permission
         return $this->hasPermission($user, 'resources.update_allocation');
     }
 

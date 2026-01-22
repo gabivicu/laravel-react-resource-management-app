@@ -10,11 +10,9 @@ class UpdateResourceAllocationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $allocation = \App\Domains\Resource\Models\ResourceAllocation::find(
-            $this->route('resource-allocation') ?? $this->route('id')
-        );
-
-        return $allocation && $this->user()->can('update', $allocation);
+        // Authorization is handled in the controller after loading the allocation
+        // This allows the controller to load the allocation first, then check authorization
+        return true;
     }
 
     public function rules(): array
