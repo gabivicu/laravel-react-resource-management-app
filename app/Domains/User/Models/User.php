@@ -2,17 +2,17 @@
 
 namespace App\Domains\User\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Sanctum\HasApiTokens;
-use Database\Factories\UserFactory;
 
 /**
  * User Model
- * 
+ *
  * Extended with multi-tenancy and RBAC functionality
  */
 class User extends Authenticatable
@@ -50,7 +50,7 @@ class User extends Authenticatable
             'user_id',
             'organization_id'
         )->withPivot(['role_id', 'joined_at'])
-          ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -64,7 +64,7 @@ class User extends Authenticatable
             'user_id',
             'role_id'
         )->wherePivot('organization_id', $organizationId)
-          ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -113,11 +113,12 @@ class User extends Authenticatable
     public function setCurrentOrganization(int $organizationId): bool
     {
         // Verify that the user belongs to the organization
-        if (!$this->organizations()->where('organizations.id', $organizationId)->exists()) {
+        if (! $this->organizations()->where('organizations.id', $organizationId)->exists()) {
             return false;
         }
 
         $this->current_organization_id = $organizationId;
+
         return $this->save();
     }
 

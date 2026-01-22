@@ -17,14 +17,14 @@ class UserController extends BaseController
     public function index(Request $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
         $filters = $request->only(['search']);
         $perPage = $request->get('per_page', 15);
-        
+
         $users = $this->userService->getPaginated($organizationId, $filters, $perPage);
 
         return $this->success($users->items(), 'Users retrieved successfully', 200, [
@@ -44,7 +44,7 @@ class UserController extends BaseController
     {
         $user = $this->userService->find($id);
 
-        if (!$user) {
+        if (! $user) {
             return $this->error('User not found', 404);
         }
 
@@ -58,7 +58,7 @@ class UserController extends BaseController
     {
         $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'email', 'unique:users,email,' . $id],
+            'email' => ['sometimes', 'required', 'email', 'unique:users,email,'.$id],
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
         ]);
 
@@ -77,8 +77,8 @@ class UserController extends BaseController
         ]);
 
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -93,8 +93,8 @@ class UserController extends BaseController
     public function removeRole(Request $request, int $id)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 

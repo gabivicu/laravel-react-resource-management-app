@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * Permission Model
- * 
+ *
  * Permissions define specific actions (e.g., projects.create, tasks.delete)
  */
 class Permission extends Model

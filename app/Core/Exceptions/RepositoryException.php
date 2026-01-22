@@ -20,6 +20,7 @@ class RepositoryException extends Exception
         if ($reason) {
             $message .= " Reason: {$reason}";
         }
+
         return new self($message);
     }
 
@@ -29,6 +30,7 @@ class RepositoryException extends Exception
         if ($reason) {
             $message .= " Reason: {$reason}";
         }
+
         return new self($message);
     }
 }

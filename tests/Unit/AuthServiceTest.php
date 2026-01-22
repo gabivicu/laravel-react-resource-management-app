@@ -4,8 +4,8 @@ namespace Tests\Unit;
 
 use App\Domains\Auth\Services\AuthService;
 use App\Domains\Organization\Models\Organization;
-use App\Domains\User\Models\User;
 use App\Domains\Permission\Models\Role;
+use App\Domains\User\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,7 +20,7 @@ class AuthServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->authService = new AuthService();
+        $this->authService = new AuthService;
     }
 
     #[Test]

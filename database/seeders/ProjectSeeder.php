@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Project\Models\Project;
 use App\Domains\Organization\Models\Organization;
+use App\Domains\Project\Models\Project;
 use App\Domains\User\Models\User;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class ProjectSeeder extends Seeder
 {
@@ -16,9 +16,10 @@ class ProjectSeeder extends Seeder
     public function run(): void
     {
         $organization = Organization::first();
-        
-        if (!$organization) {
+
+        if (! $organization) {
             $this->command->error('No organization found. Please run UserSeeder first.');
+
             return;
         }
 
@@ -28,6 +29,7 @@ class ProjectSeeder extends Seeder
 
         if ($users->isEmpty()) {
             $this->command->error('No users found. Please run UserSeeder first.');
+
             return;
         }
 

@@ -20,7 +20,7 @@ class ResourceAllocationController extends BaseController
     {
         $filters = $request->only(['project_id', 'user_id', 'active', 'date_from', 'date_to']);
         $perPage = $request->get('per_page', 15);
-        
+
         $allocations = $this->allocationService->getPaginated($filters, $perPage);
 
         return $this->success($allocations->items(), 'Resource allocations retrieved successfully', 200, [
@@ -39,8 +39,8 @@ class ResourceAllocationController extends BaseController
     public function store(StoreResourceAllocationRequest $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -57,7 +57,7 @@ class ResourceAllocationController extends BaseController
     {
         $allocation = $this->allocationService->find($id);
 
-        if (!$allocation) {
+        if (! $allocation) {
             return $this->error('Resource allocation not found', 404);
         }
 
@@ -71,6 +71,7 @@ class ResourceAllocationController extends BaseController
     {
         try {
             $allocation = $this->allocationService->update($id, $request->validated());
+
             return $this->success($allocation, 'Resource allocation updated successfully');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->error('Validation failed', 422, $e->errors());
@@ -84,7 +85,7 @@ class ResourceAllocationController extends BaseController
     {
         $deleted = $this->allocationService->delete($id);
 
-        if (!$deleted) {
+        if (! $deleted) {
             return $this->error('Failed to delete resource allocation', 500);
         }
 

@@ -20,7 +20,7 @@ class TaskController extends BaseController
     {
         $filters = $request->only(['project_id', 'status', 'priority', 'search']);
         $perPage = $request->get('per_page', 15);
-        
+
         $tasks = $this->taskService->getPaginated($filters, $perPage);
 
         return $this->success($tasks->items(), 'Tasks retrieved successfully', 200, [
@@ -39,7 +39,7 @@ class TaskController extends BaseController
     public function kanban(Request $request)
     {
         $projectId = $request->get('project_id');
-        
+
         $tasks = $this->taskService->getGroupedByStatus($projectId);
 
         return $this->success($tasks, 'Tasks retrieved successfully');
@@ -51,8 +51,8 @@ class TaskController extends BaseController
     public function store(StoreTaskRequest $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -69,7 +69,7 @@ class TaskController extends BaseController
     {
         $task = $this->taskService->find($id);
 
-        if (!$task) {
+        if (! $task) {
             return $this->error('Task not found', 404);
         }
 
@@ -112,7 +112,7 @@ class TaskController extends BaseController
     {
         $deleted = $this->taskService->delete($id);
 
-        if (!$deleted) {
+        if (! $deleted) {
             return $this->error('Failed to delete task', 500);
         }
 

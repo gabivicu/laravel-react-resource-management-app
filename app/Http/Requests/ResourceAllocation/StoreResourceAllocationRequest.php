@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\ResourceAllocation;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreResourceAllocationRequest extends FormRequest

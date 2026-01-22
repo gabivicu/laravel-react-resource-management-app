@@ -3,11 +3,11 @@
 namespace App\Domains\Task\Models;
 
 use App\Core\Traits\HasTenantScope;
+use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Database\Factories\TaskFactory;
 
 /**
  * Task Model

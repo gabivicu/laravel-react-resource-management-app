@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Domains\User\Models\User;
 use App\Domains\Organization\Models\Organization;
 use App\Domains\Project\Models\Project;
+use App\Domains\User\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -14,7 +14,9 @@ class ProjectApiTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Organization $organization;
+
     protected string $token;
 
     protected function setUp(): void

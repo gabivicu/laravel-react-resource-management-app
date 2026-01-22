@@ -4,7 +4,6 @@ namespace App\Domains\Project\Services;
 
 use App\Domains\Project\Models\Project;
 use App\Domains\Project\Repositories\ProjectRepository;
-use App\Domains\User\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -93,6 +92,7 @@ class ProjectService
     public function delete(int $id): bool
     {
         $project = $this->projectRepository->findOrFail($id);
+
         return $project->delete();
     }
 
@@ -102,8 +102,8 @@ class ProjectService
     public function addMember(int $projectId, int $userId, string $role = 'member'): void
     {
         $project = $this->projectRepository->findOrFail($projectId);
-        
-        if (!$project->members()->where('user_id', $userId)->exists()) {
+
+        if (! $project->members()->where('user_id', $userId)->exists()) {
             $project->members()->attach($userId, [
                 'role' => $role,
                 'joined_at' => now(),

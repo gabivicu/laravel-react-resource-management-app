@@ -17,8 +17,8 @@ class AnalyticsController extends BaseController
     public function dashboard(Request $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -33,8 +33,8 @@ class AnalyticsController extends BaseController
     public function projects(Request $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -49,8 +49,8 @@ class AnalyticsController extends BaseController
     public function tasks(Request $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -65,8 +65,8 @@ class AnalyticsController extends BaseController
     public function resources(Request $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -81,8 +81,8 @@ class AnalyticsController extends BaseController
     public function taskCompletionTrend(Request $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 

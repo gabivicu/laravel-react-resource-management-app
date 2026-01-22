@@ -32,7 +32,7 @@ class TaskService
     /**
      * Get tasks grouped by status (for Kanban)
      */
-    public function getGroupedByStatus(int $projectId = null): array
+    public function getGroupedByStatus(?int $projectId = null): array
     {
         return $this->taskRepository->getGroupedByStatus($projectId);
     }
@@ -117,10 +117,10 @@ class TaskService
     /**
      * Update task order and status (for Kanban drag & drop)
      */
-    public function updateOrder(int $id, int $order, string $status = null): Task
+    public function updateOrder(int $id, int $order, ?string $status = null): Task
     {
         $task = $this->taskRepository->findOrFail($id);
-        
+
         $updateData = ['order' => $order];
         if ($status !== null && $status !== $task->status) {
             $updateData['status'] = $status;
@@ -137,6 +137,7 @@ class TaskService
     public function delete(int $id): bool
     {
         $task = $this->taskRepository->findOrFail($id);
+
         return $task->delete();
     }
 }

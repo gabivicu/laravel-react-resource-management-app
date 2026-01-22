@@ -2,9 +2,9 @@
 
 namespace App\Domains\Resource\Repositories;
 
+use App\Core\Contracts\Repositories\RepositoryInterface;
 use App\Core\Support\BaseRepository;
 use App\Domains\Resource\Models\ResourceAllocation;
-use App\Core\Contracts\Repositories\RepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -86,7 +86,7 @@ class ResourceAllocationRepository extends BaseRepository implements RepositoryI
         if (isset($filters['date_to'])) {
             $query->where(function ($q) use ($filters) {
                 $q->whereNull('end_date')
-                  ->orWhere('end_date', '<=', $filters['date_to']);
+                    ->orWhere('end_date', '<=', $filters['date_to']);
             });
         }
 

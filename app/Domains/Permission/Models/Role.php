@@ -5,11 +5,10 @@ namespace App\Domains\Permission\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Role Model
- * 
+ *
  * Roles define sets of permissions (e.g., Admin, Project Manager, Developer)
  */
 class Role extends Model
@@ -52,7 +51,7 @@ class Role extends Model
             'role_id',
             'user_id'
         )->withPivot('organization_id')
-          ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**

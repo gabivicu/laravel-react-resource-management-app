@@ -2,9 +2,9 @@
 
 namespace App\Domains\Permission\Services;
 
-use App\Domains\Permission\Models\Role;
-use App\Domains\Permission\Models\Permission;
 use App\Domains\Organization\Models\Organization;
+use App\Domains\Permission\Models\Permission;
+use App\Domains\Permission\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 

@@ -2,22 +2,25 @@
 
 namespace Tests\Feature;
 
-use App\Domains\User\Models\User;
 use App\Domains\Organization\Models\Organization;
 use App\Domains\Project\Models\Project;
 use App\Domains\Resource\Models\ResourceAllocation;
+use App\Domains\User\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Carbon\Carbon;
 
 class ResourceAllocationApiTest extends TestCase
 {
     use RefreshDatabase;
 
     protected User $user;
+
     protected Organization $organization;
+
     protected Project $project;
+
     protected string $token;
 
     protected function setUp(): void

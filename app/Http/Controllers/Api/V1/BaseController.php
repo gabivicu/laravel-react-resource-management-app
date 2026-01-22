@@ -24,7 +24,7 @@ class BaseController extends Controller
             $response['data'] = $data;
         }
 
-        if (!empty($meta)) {
+        if (! empty($meta)) {
             $response = array_merge($response, $meta);
         }
 
@@ -41,7 +41,7 @@ class BaseController extends Controller
             'message' => $message,
         ];
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             $response['errors'] = $errors;
         }
 

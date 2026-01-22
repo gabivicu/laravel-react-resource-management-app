@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Task\Models\Task;
-use App\Domains\Project\Models\Project;
 use App\Domains\Organization\Models\Organization;
+use App\Domains\Project\Models\Project;
+use App\Domains\Task\Models\Task;
 use App\Domains\User\Models\User;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class TaskSeeder extends Seeder
 {
@@ -17,16 +17,18 @@ class TaskSeeder extends Seeder
     public function run(): void
     {
         $organization = Organization::first();
-        
-        if (!$organization) {
+
+        if (! $organization) {
             $this->command->error('No organization found. Please run UserSeeder first.');
+
             return;
         }
 
         $projects = Project::where('organization_id', $organization->id)->get();
-        
+
         if ($projects->isEmpty()) {
             $this->command->error('No projects found. Please run ProjectSeeder first.');
+
             return;
         }
 
@@ -136,7 +138,7 @@ class TaskSeeder extends Seeder
             for ($i = 0; $i < rand(3, 5); $i++) {
                 $status = $statuses[array_rand($statuses)];
                 $priority = $priorities[array_rand($priorities)];
-                
+
                 $dueDate = null;
                 if ($status === 'todo' || $status === 'in_progress') {
                     $dueDate = Carbon::now()->addDays(rand(1, 21));
@@ -147,7 +149,7 @@ class TaskSeeder extends Seeder
                 $task = Task::create([
                     'organization_id' => $organization->id,
                     'project_id' => $project->id,
-                    'title' => 'Task ' . ($order++) . ' - ' . ucfirst($priority) . ' Priority',
+                    'title' => 'Task '.($order++).' - '.ucfirst($priority).' Priority',
                     'description' => 'Random task for testing purposes',
                     'status' => $status,
                     'priority' => $priority,

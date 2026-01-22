@@ -3,8 +3,8 @@
 namespace App\Domains\Analytics\Services;
 
 use App\Domains\Project\Models\Project;
-use App\Domains\Task\Models\Task;
 use App\Domains\Resource\Models\ResourceAllocation;
+use App\Domains\Task\Models\Task;
 use App\Domains\User\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -82,8 +82,8 @@ class AnalyticsService
             'by_priority' => $priorityBreakdown,
             'total_estimated_hours' => $totalEstimatedHours,
             'total_actual_hours' => $totalActualHours,
-            'completion_rate' => $totalEstimatedHours > 0 
-                ? ($totalActualHours / $totalEstimatedHours) * 100 
+            'completion_rate' => $totalEstimatedHours > 0
+                ? ($totalActualHours / $totalEstimatedHours) * 100
                 : 0,
         ];
     }
@@ -123,7 +123,7 @@ class AnalyticsService
     public function getTaskCompletionTrend(int $organizationId, int $days = 30): array
     {
         $startDate = now()->subDays($days);
-        
+
         $completedTasks = Task::where('organization_id', $organizationId)
             ->where('status', 'done')
             ->where('updated_at', '>=', $startDate)

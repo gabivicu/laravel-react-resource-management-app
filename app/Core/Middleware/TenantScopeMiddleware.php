@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Middleware for managing the current tenant
- * 
+ *
  * This middleware sets the current tenant in session and request,
  * based on the X-Tenant-ID header or the authenticated user's organization.
  */
@@ -26,7 +26,7 @@ class TenantScopeMiddleware
             // Set tenant in request to be accessible in the application
             $request->merge(['organization_id' => $tenantId]);
             $request->headers->set('X-Tenant-ID', $tenantId);
-            
+
             // Set in session for persistence
             session(['tenant_id' => $tenantId]);
         }
@@ -58,7 +58,7 @@ class TenantScopeMiddleware
         if (Auth::check()) {
             $user = Auth::user();
             $tenantId = $user->current_organization_id ?? $user->organizations()->first()?->id;
-            
+
             if ($tenantId && $this->validateTenantAccess($tenantId)) {
                 return (int) $tenantId;
             }
@@ -72,12 +72,12 @@ class TenantScopeMiddleware
      */
     protected function validateTenantAccess($tenantId): bool
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return false;
         }
 
         $user = Auth::user();
-        
+
         // Check if user belongs to the organization
         return $user->organizations()->where('organizations.id', $tenantId)->exists();
     }

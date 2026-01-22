@@ -17,8 +17,8 @@ class RoleController extends BaseController
     public function index(Request $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -50,8 +50,8 @@ class RoleController extends BaseController
         ]);
 
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -67,7 +67,7 @@ class RoleController extends BaseController
     {
         $role = $this->roleService->find($id);
 
-        if (!$role) {
+        if (! $role) {
             return $this->error('Role not found', 404);
         }
 
@@ -88,6 +88,7 @@ class RoleController extends BaseController
 
         try {
             $role = $this->roleService->update($id, $request->only(['name', 'description', 'permission_ids']));
+
             return $this->success($role, 'Role updated successfully');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 400);
@@ -102,7 +103,7 @@ class RoleController extends BaseController
         try {
             $deleted = $this->roleService->delete($id);
 
-            if (!$deleted) {
+            if (! $deleted) {
                 return $this->error('Failed to delete role', 500);
             }
 

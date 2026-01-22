@@ -6,7 +6,7 @@ use Illuminate\Support\ServiceProvider;
 
 /**
  * Service Provider pentru binding-uri Repository
- * 
+ *
  * Aici se înregistrează toate repository-urile și interfețele lor
  */
 class RepositoryServiceProvider extends ServiceProvider

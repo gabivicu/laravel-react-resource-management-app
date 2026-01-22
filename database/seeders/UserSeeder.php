@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Domains\User\Models\User;
 use App\Domains\Organization\Models\Organization;
 use App\Domains\Permission\Models\Role;
+use App\Domains\User\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -17,8 +17,8 @@ class UserSeeder extends Seeder
     {
         // Get or create a default organization
         $organization = Organization::first();
-        
-        if (!$organization) {
+
+        if (! $organization) {
             $organization = Organization::create([
                 'name' => 'Demo Organization',
                 'slug' => 'demo-organization',
@@ -51,11 +51,11 @@ class UserSeeder extends Seeder
                 'is_system' => true,
                 'organization_id' => $organization->id,
             ]);
-            
+
             // Assign all permissions to Owner role
             $allPermissions = \App\Domains\Permission\Models\Permission::pluck('id')->toArray();
             $ownerRole->permissions()->sync($allPermissions);
-            
+
             $organization->users()->attach($admin->id, ['role_id' => $ownerRole->id]);
         }
 

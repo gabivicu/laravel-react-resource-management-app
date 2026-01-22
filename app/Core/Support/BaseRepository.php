@@ -32,7 +32,7 @@ abstract class BaseRepository implements RepositoryInterface
     {
         $model = app($this->model());
 
-        if (!$model instanceof Model) {
+        if (! $model instanceof Model) {
             throw new \Exception("Class {$this->model()} must be an instance of Illuminate\\Database\\Eloquent\\Model");
         }
 
@@ -82,6 +82,7 @@ abstract class BaseRepository implements RepositoryInterface
     {
         try {
             $model = $this->findOrFail($id);
+
             return $model->update($data);
         } catch (\Exception $e) {
             throw RepositoryException::updateFailed($this->model()->getShortName(), $id, $e->getMessage());
@@ -94,6 +95,7 @@ abstract class BaseRepository implements RepositoryInterface
     public function delete(int $id): bool
     {
         $model = $this->findOrFail($id);
+
         return $model->delete();
     }
 

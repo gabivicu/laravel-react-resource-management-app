@@ -8,7 +8,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Base interface for all repositories
- * 
+ *
  * Defines the standard contract for CRUD operations
  */
 interface RepositoryInterface

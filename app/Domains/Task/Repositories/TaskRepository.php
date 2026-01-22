@@ -2,9 +2,9 @@
 
 namespace App\Domains\Task\Repositories;
 
+use App\Core\Contracts\Repositories\RepositoryInterface;
 use App\Core\Support\BaseRepository;
 use App\Domains\Task\Models\Task;
-use App\Core\Contracts\Repositories\RepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -39,7 +39,7 @@ class TaskRepository extends BaseRepository implements RepositoryInterface
     /**
      * Get tasks grouped by status (for Kanban)
      */
-    public function getGroupedByStatus(int $projectId = null, array $relations = ['project', 'assignees']): array
+    public function getGroupedByStatus(?int $projectId = null, array $relations = ['project', 'assignees']): array
     {
         $query = $this->query()->with($relations);
 
@@ -78,8 +78,8 @@ class TaskRepository extends BaseRepository implements RepositoryInterface
 
         if (isset($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('title', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('description', 'like', '%' . $filters['search'] . '%');
+                $q->where('title', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('description', 'like', '%'.$filters['search'].'%');
             });
         }
 
@@ -97,10 +97,10 @@ class TaskRepository extends BaseRepository implements RepositoryInterface
     /**
      * Update task order (for Kanban drag & drop)
      */
-    public function updateOrder(int $id, int $order, string $status = null): bool
+    public function updateOrder(int $id, int $order, ?string $status = null): bool
     {
         $task = $this->findOrFail($id);
-        
+
         $data = ['order' => $order];
         if ($status !== null) {
             $data['status'] = $status;

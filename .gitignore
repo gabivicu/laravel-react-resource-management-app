@@ -64,7 +64,7 @@ Thumbs.db
 # Dependencies
 /vendor
 /node_modules
-/package-lock.json
+# /package-lock.json - Keep in repo for CI/CD consistency
 /yarn.lock
 
 # Laravel specific

@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Domains\Task\Models\Task;
 use App\Domains\Organization\Models\Organization;
 use App\Domains\Project\Models\Project;
+use App\Domains\Task\Models\Task;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TaskFactory extends Factory

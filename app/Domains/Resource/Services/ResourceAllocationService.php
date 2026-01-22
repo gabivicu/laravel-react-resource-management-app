@@ -110,6 +110,7 @@ class ResourceAllocationService
     public function delete(int $id): bool
     {
         $allocation = $this->allocationRepository->findOrFail($id);
+
         return $allocation->delete();
     }
 
@@ -129,14 +130,14 @@ class ResourceAllocationService
                 $q->where(function ($q2) use ($startDate, $endDate) {
                     // Overlapping allocations
                     $q2->whereBetween('start_date', [$startDate, $endDate ?? '9999-12-31'])
-                       ->orWhereBetween('end_date', [$startDate, $endDate ?? '9999-12-31'])
-                       ->orWhere(function ($q3) use ($startDate, $endDate) {
-                           $q3->where('start_date', '<=', $startDate)
-                              ->where(function ($q4) use ($endDate) {
-                                  $q4->whereNull('end_date')
-                                     ->orWhere('end_date', '>=', $endDate ?? '9999-12-31');
-                              });
-                       });
+                        ->orWhereBetween('end_date', [$startDate, $endDate ?? '9999-12-31'])
+                        ->orWhere(function ($q3) use ($startDate, $endDate) {
+                            $q3->where('start_date', '<=', $startDate)
+                                ->where(function ($q4) use ($endDate) {
+                                    $q4->whereNull('end_date')
+                                        ->orWhere('end_date', '>=', $endDate ?? '9999-12-31');
+                                });
+                        });
                 });
             });
 
@@ -145,7 +146,7 @@ class ResourceAllocationService
         if (($totalAllocation + $allocationPercentage) > 100) {
             throw ValidationException::withMessages([
                 'allocation_percentage' => [
-                    'Total allocation exceeds 100%. Current allocation: ' . $totalAllocation . '%',
+                    'Total allocation exceeds 100%. Current allocation: '.$totalAllocation.'%',
                 ],
             ]);
         }

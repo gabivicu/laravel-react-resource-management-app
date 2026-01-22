@@ -3,14 +3,14 @@
 namespace App\Domains\Resource\Models;
 
 use App\Core\Traits\HasTenantScope;
+use Database\Factories\ResourceAllocationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Database\Factories\ResourceAllocationFactory;
 
 /**
  * Resource Allocation Model
- * 
+ *
  * Represents the allocation of a user (resource) to a project
  */
 class ResourceAllocation extends Model
@@ -64,10 +64,11 @@ class ResourceAllocation extends Model
     public function scopeActive($query)
     {
         $now = now();
+
         return $query->where('start_date', '<=', $now)
-                    ->where(function ($q) use ($now) {
-                        $q->whereNull('end_date')
-                          ->orWhere('end_date', '>=', $now);
-                    });
+            ->where(function ($q) use ($now) {
+                $q->whereNull('end_date')
+                    ->orWhere('end_date', '>=', $now);
+            });
     }
 }

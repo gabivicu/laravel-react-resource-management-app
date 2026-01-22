@@ -3,11 +3,11 @@
 namespace App\Domains\Auth\Services;
 
 use App\Domains\Organization\Models\Organization;
-use App\Domains\User\Models\User;
-use App\Domains\Permission\Models\Role;
 use App\Domains\Permission\Models\Permission;
-use Illuminate\Support\Facades\Hash;
+use App\Domains\Permission\Models\Role;
+use App\Domains\User\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -28,7 +28,7 @@ class AuthService
             // 2. Create Organization
             $organization = Organization::create([
                 'name' => $data['organization_name'],
-                'slug' => \Illuminate\Support\Str::slug($data['organization_name']) . '-' . uniqid(),
+                'slug' => \Illuminate\Support\Str::slug($data['organization_name']).'-'.uniqid(),
                 'is_active' => true,
             ]);
 
@@ -65,7 +65,7 @@ class AuthService
         }
 
         // Ensure user has a current organization set if they belong to any
-        if (!$user->current_organization_id) {
+        if (! $user->current_organization_id) {
             $org = $user->organizations()->first();
             if ($org) {
                 $user->current_organization_id = $org->id;

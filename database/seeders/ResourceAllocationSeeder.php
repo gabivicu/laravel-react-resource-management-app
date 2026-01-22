@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Resource\Models\ResourceAllocation;
-use App\Domains\Project\Models\Project;
 use App\Domains\Organization\Models\Organization;
+use App\Domains\Project\Models\Project;
+use App\Domains\Resource\Models\ResourceAllocation;
 use App\Domains\User\Models\User;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class ResourceAllocationSeeder extends Seeder
 {
@@ -17,16 +17,18 @@ class ResourceAllocationSeeder extends Seeder
     public function run(): void
     {
         $organization = Organization::first();
-        
-        if (!$organization) {
+
+        if (! $organization) {
             $this->command->error('No organization found. Please run UserSeeder first.');
+
             return;
         }
 
         $projects = Project::where('organization_id', $organization->id)->get();
-        
+
         if ($projects->isEmpty()) {
             $this->command->error('No projects found. Please run ProjectSeeder first.');
+
             return;
         }
 
@@ -36,6 +38,7 @@ class ResourceAllocationSeeder extends Seeder
 
         if ($users->isEmpty()) {
             $this->command->error('No users found. Please run UserSeeder first.');
+
             return;
         }
 
@@ -43,10 +46,10 @@ class ResourceAllocationSeeder extends Seeder
 
         // Create allocations for active projects
         $activeProjects = $projects->where('status', 'active');
-        
+
         foreach ($activeProjects as $project) {
             $projectMembers = $project->members;
-            
+
             if ($projectMembers->isEmpty()) {
                 continue;
             }
@@ -70,17 +73,17 @@ class ResourceAllocationSeeder extends Seeder
                     'allocation_percentage' => $allocationPercentage,
                     'start_date' => $startDate,
                     'end_date' => $endDate,
-                    'notes' => 'Allocated to ' . $project->name,
+                    'notes' => 'Allocated to '.$project->name,
                 ]);
             }
         }
 
         // Create some additional allocations for planning projects
         $planningProjects = $projects->where('status', 'planning');
-        
+
         foreach ($planningProjects->take(2) as $project) {
             $selectedUsers = $users->random(rand(1, 3));
-            
+
             foreach ($selectedUsers as $user) {
                 ResourceAllocation::create([
                     'organization_id' => $organization->id,
@@ -90,7 +93,7 @@ class ResourceAllocationSeeder extends Seeder
                     'allocation_percentage' => rand(10, 50),
                     'start_date' => $project->start_date ?? Carbon::now()->addWeek(),
                     'end_date' => $project->end_date,
-                    'notes' => 'Planned allocation for ' . $project->name,
+                    'notes' => 'Planned allocation for '.$project->name,
                 ]);
             }
         }

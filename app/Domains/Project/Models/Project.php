@@ -3,12 +3,12 @@
 namespace App\Domains\Project\Models;
 
 use App\Core\Traits\HasTenantScope;
+use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Database\Factories\ProjectFactory;
 
 /**
  * Project Model
@@ -62,7 +62,7 @@ class Project extends Model
             'project_id',
             'user_id'
         )->withPivot(['role', 'joined_at'])
-          ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**

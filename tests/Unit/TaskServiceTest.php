@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
-use App\Domains\Task\Services\TaskService;
-use App\Domains\Task\Repositories\TaskRepository;
 use App\Domains\Organization\Models\Organization;
 use App\Domains\Project\Models\Project;
 use App\Domains\Task\Models\Task;
+use App\Domains\Task\Repositories\TaskRepository;
+use App\Domains\Task\Services\TaskService;
 use App\Domains\User\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,13 +17,15 @@ class TaskServiceTest extends TestCase
     use RefreshDatabase;
 
     protected TaskService $taskService;
+
     protected Organization $organization;
+
     protected Project $project;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->taskService = new TaskService(new TaskRepository());
+        $this->taskService = new TaskService(new TaskRepository);
         $this->organization = Organization::factory()->create();
         $this->project = Project::factory()->create([
             'organization_id' => $this->organization->id,

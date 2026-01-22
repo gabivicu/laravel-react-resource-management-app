@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
-use App\Domains\Project\Services\ProjectService;
-use App\Domains\Project\Repositories\ProjectRepository;
 use App\Domains\Organization\Models\Organization;
-use App\Domains\User\Models\User;
 use App\Domains\Project\Models\Project;
+use App\Domains\Project\Repositories\ProjectRepository;
+use App\Domains\Project\Services\ProjectService;
+use App\Domains\User\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -16,12 +16,13 @@ class ProjectServiceTest extends TestCase
     use RefreshDatabase;
 
     protected ProjectService $projectService;
+
     protected Organization $organization;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->projectService = new ProjectService(new ProjectRepository());
+        $this->projectService = new ProjectService(new ProjectRepository);
         $this->organization = Organization::factory()->create();
     }
 

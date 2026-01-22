@@ -2,31 +2,34 @@
 
 namespace Tests\Unit;
 
-use App\Domains\Resource\Services\ResourceAllocationService;
-use App\Domains\Resource\Repositories\ResourceAllocationRepository;
 use App\Domains\Organization\Models\Organization;
 use App\Domains\Project\Models\Project;
-use App\Domains\User\Models\User;
 use App\Domains\Resource\Models\ResourceAllocation;
+use App\Domains\Resource\Repositories\ResourceAllocationRepository;
+use App\Domains\Resource\Services\ResourceAllocationService;
+use App\Domains\User\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
-use Carbon\Carbon;
 
 class ResourceAllocationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
     protected ResourceAllocationService $allocationService;
+
     protected Organization $organization;
+
     protected Project $project;
+
     protected User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->allocationService = new ResourceAllocationService(new ResourceAllocationRepository());
+        $this->allocationService = new ResourceAllocationService(new ResourceAllocationRepository);
         $this->organization = Organization::factory()->create();
         $this->project = Project::factory()->create([
             'organization_id' => $this->organization->id,

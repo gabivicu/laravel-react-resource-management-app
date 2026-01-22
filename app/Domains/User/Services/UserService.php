@@ -2,11 +2,11 @@
 
 namespace App\Domains\User\Services;
 
-use App\Domains\User\Models\User;
 use App\Domains\Organization\Models\Organization;
+use App\Domains\User\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
@@ -21,8 +21,8 @@ class UserService
 
         if (isset($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('email', 'like', '%' . $filters['search'] . '%');
+                $q->where('name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('email', 'like', '%'.$filters['search'].'%');
             });
         }
 
@@ -84,6 +84,7 @@ class UserService
     public function delete(int $id): bool
     {
         $user = User::findOrFail($id);
+
         return $user->delete();
     }
 

@@ -2,9 +2,9 @@
 
 namespace App\Domains\Project\Repositories;
 
+use App\Core\Contracts\Repositories\RepositoryInterface;
 use App\Core\Support\BaseRepository;
 use App\Domains\Project\Models\Project;
-use App\Core\Contracts\Repositories\RepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -36,8 +36,8 @@ class ProjectRepository extends BaseRepository implements RepositoryInterface
 
         if (isset($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('description', 'like', '%' . $filters['search'] . '%');
+                $q->where('name', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('description', 'like', '%'.$filters['search'].'%');
             });
         }
 

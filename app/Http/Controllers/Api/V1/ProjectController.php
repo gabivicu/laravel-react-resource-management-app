@@ -20,7 +20,7 @@ class ProjectController extends BaseController
     {
         $filters = $request->only(['status', 'search']);
         $perPage = $request->get('per_page', 15);
-        
+
         $projects = $this->projectService->getPaginated($filters, $perPage);
 
         return $this->success($projects->items(), 'Projects retrieved successfully', 200, [
@@ -39,8 +39,8 @@ class ProjectController extends BaseController
     public function store(StoreProjectRequest $request)
     {
         $organizationId = $request->user()->current_organization_id;
-        
-        if (!$organizationId) {
+
+        if (! $organizationId) {
             return $this->error('No organization selected', 400);
         }
 
@@ -59,7 +59,7 @@ class ProjectController extends BaseController
     {
         $project = $this->projectService->find($id);
 
-        if (!$project) {
+        if (! $project) {
             return $this->error('Project not found', 404);
         }
 
@@ -83,7 +83,7 @@ class ProjectController extends BaseController
     {
         $deleted = $this->projectService->delete($id);
 
-        if (!$deleted) {
+        if (! $deleted) {
             return $this->error('Failed to delete project', 500);
         }
 

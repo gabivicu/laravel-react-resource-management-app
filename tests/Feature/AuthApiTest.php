@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Domains\User\Models\User;
 use App\Domains\Organization\Models\Organization;
+use App\Domains\User\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;

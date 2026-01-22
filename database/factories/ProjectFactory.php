@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Domains\Project\Models\Project;
 use App\Domains\Organization\Models\Organization;
+use App\Domains\Project\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProjectFactory extends Factory

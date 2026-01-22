@@ -2,12 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Domains\Resource\Models\ResourceAllocation;
 use App\Domains\Organization\Models\Organization;
 use App\Domains\Project\Models\Project;
+use App\Domains\Resource\Models\ResourceAllocation;
 use App\Domains\User\Models\User;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ResourceAllocationFactory extends Factory
 {

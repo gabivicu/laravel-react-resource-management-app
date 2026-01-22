@@ -2,15 +2,15 @@
 
 namespace App\Domains\Organization\Models;
 
+use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Database\Factories\OrganizationFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Organization Model (Tenants)
- * 
+ *
  * Each organization represents a tenant in the multi-tenant system
  */
 class Organization extends Model
@@ -49,7 +49,7 @@ class Organization extends Model
             'organization_id',
             'user_id'
         )->withPivot(['role_id', 'joined_at'])
-          ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
