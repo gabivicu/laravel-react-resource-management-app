@@ -747,6 +747,40 @@ This is a portfolio project. If you'd like to contribute or have suggestions:
 
 For code style, follow PSR-12 for PHP and ESLint configuration for TypeScript/JavaScript.
 
+## 🔒 Pre-Commit Hooks
+
+This project includes pre-commit hooks to ensure code quality before commits.
+
+### Installation
+
+The pre-commit hook is automatically installed. If you need to reinstall it:
+
+```bash
+./scripts/install-pre-commit.sh
+```
+
+### What Gets Checked
+
+- **Laravel Pint** - PHP code style (PSR-12)
+- **TypeScript Type Check** - Type safety verification
+- **ESLint** - JavaScript/TypeScript code quality
+
+### Usage
+
+The hook runs automatically on every commit. To test manually:
+
+```bash
+./scripts/pre-commit.sh
+```
+
+To skip the hook (not recommended):
+
+```bash
+git commit --no-verify
+```
+
+See [docs/PRE_COMMIT.md](docs/PRE_COMMIT.md) for detailed documentation.
+
 ## 📚 Additional Resources
 
 - [Laravel Documentation](https://laravel.com/docs)
