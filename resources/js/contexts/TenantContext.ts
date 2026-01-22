@@ -8,3 +8,6 @@ export interface TenantContextType {
 }
 
 export const TenantContext = createContext<TenantContextType | undefined>(undefined);
+
+// Re-export TenantProvider from .tsx file
+export { TenantProvider } from './TenantContext.tsx';
