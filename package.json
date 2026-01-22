@@ -6,6 +6,8 @@
         "build": "tsc && vite build",
         "dev": "vite",
         "type-check": "tsc --noEmit",
+        "lint": "eslint resources/js --ext .ts,.tsx",
+        "lint:fix": "eslint resources/js --ext .ts,.tsx --fix",
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage"
