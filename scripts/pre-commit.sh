@@ -31,7 +31,8 @@ ERRORS=0
 # PHP Code Style Check (Laravel Pint)
 echo -e "\n${YELLOW}[1/3] Checking PHP code style with Laravel Pint...${NC}"
 if [ "$USE_DOCKER" = true ]; then
-    if docker-compose exec -T app ./vendor/bin/pint --test 2>&1 | tail -1 | grep -q "PASS"; then
+    PINT_OUTPUT=$(docker-compose exec -T app ./vendor/bin/pint --test 2>&1 || true)
+    if echo "$PINT_OUTPUT" | tail -1 | grep -q "PASS"; then
         echo -e "${GREEN}✓ PHP code style check passed${NC}"
     else
         echo -e "${RED}✗ PHP code style check failed${NC}"

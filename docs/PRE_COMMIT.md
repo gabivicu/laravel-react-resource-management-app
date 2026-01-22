@@ -10,6 +10,8 @@ The pre-commit hook automatically runs the following checks:
 2. **TypeScript Type Check** - Type safety verification
 3. **ESLint** - JavaScript/TypeScript code quality
 
+**Note:** The hook does **NOT** run tests by default, as tests can be slow. Tests are run in CI/CD pipeline (GitHub Actions).
+
 ## How It Works
 
 When you run `git commit`, the pre-commit hook automatically:
@@ -54,6 +56,23 @@ git commit --no-verify -m "WIP: work in progress"
 
 ⚠️ **Warning:** Only skip hooks when absolutely necessary. It's better to fix the issues.
 
+## Why Tests Aren't Run
+
+Tests are **not** run in the pre-commit hook because:
+- Tests can be slow (especially with database setup)
+- Pre-commit hooks should be fast to not interrupt workflow
+- Tests are already run in CI/CD pipeline (GitHub Actions)
+- You can run tests manually: `docker-compose exec app php artisan test`
+
+If you want to run tests before committing, you can:
+```bash
+# Run tests manually
+docker-compose exec app php artisan test
+
+# Or add to your workflow
+./scripts/pre-commit.sh && docker-compose exec app php artisan test
+```
+
 ## Fixing Common Issues
 
 ### PHP Code Style Issues
@@ -94,9 +113,8 @@ The pre-commit hook is automatically installed when you clone the repository. If
 # Make sure the hook is executable
 chmod +x .git/hooks/pre-commit
 
-# Or copy the script
-cp scripts/pre-commit.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
+# Or use the installation script
+./scripts/install-pre-commit.sh
 ```
 
 ## Configuration
@@ -135,6 +153,14 @@ If local commands fail:
 - Check PHP version: `php --version` (needs PHP 8.2+)
 - Check Node.js version: `node --version` (needs Node.js 18+)
 
+### Tests Failing in CI/CD
+
+If tests pass locally but fail in CI/CD:
+1. Make sure all test files are committed: `git add tests/`
+2. Check if database migrations are up to date
+3. Verify environment variables in GitHub Actions
+4. Run tests locally: `docker-compose exec app php artisan test`
+
 ## Alternative: Pre-Commit Framework
 
 If you prefer using the [pre-commit framework](https://pre-commit.com/):
@@ -156,9 +182,10 @@ The project includes a `.pre-commit-config.yaml` file for this purpose.
 
 1. **Fix issues immediately** - Don't skip hooks, fix the problems
 2. **Run checks before committing** - Use `./scripts/pre-commit.sh` to check early
-3. **Keep dependencies updated** - Run `composer update` and `npm update` regularly
-4. **Commit often** - Small commits are easier to fix if checks fail
+3. **Run tests before pushing** - Use `docker-compose exec app php artisan test`
+4. **Keep dependencies updated** - Run `composer update` and `npm update` regularly
+5. **Commit often** - Small commits are easier to fix if checks fail
 
 ## CI/CD Integration
 
-These same checks run in GitHub Actions (see `.github/workflows/code-quality.yml`). The pre-commit hook ensures you catch issues locally before pushing.
+These same checks run in GitHub Actions (see `.github/workflows/code-quality.yml`). The pre-commit hook ensures you catch issues locally before pushing. Tests are run in CI/CD to catch integration issues.
