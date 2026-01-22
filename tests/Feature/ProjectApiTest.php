@@ -22,11 +22,22 @@ class ProjectApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Seed permissions and roles
+        $this->artisan('db:seed', ['--class' => 'PermissionSeeder']);
+
         $this->organization = Organization::factory()->create();
         $this->user = User::factory()->create([
             'current_organization_id' => $this->organization->id,
         ]);
-        $this->organization->users()->attach($this->user->id);
+
+        // Attach user to organization with admin role
+        $adminRole = \App\Domains\Permission\Models\Role::where('slug', 'admin')->first();
+        $this->organization->users()->attach($this->user->id, [
+            'role_id' => $adminRole->id,
+            'joined_at' => now(),
+        ]);
+
         $this->token = $this->user->createToken('test-token')->plainTextToken;
     }
 
