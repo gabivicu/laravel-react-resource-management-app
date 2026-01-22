@@ -1,0 +1,27 @@
+# Pre-commit configuration file
+# This file can be used with the pre-commit framework (https://pre-commit.com/)
+# Install with: pip install pre-commit && pre-commit install
+
+repos:
+  - repo: local
+    hooks:
+      - id: php-pint
+        name: Laravel Pint
+        entry: bash -c 'if [ -f "docker-compose.yml" ] && command -v docker-compose &> /dev/null; then docker-compose exec -T app ./vendor/bin/pint --test; else ./vendor/bin/pint --test; fi'
+        language: system
+        files: \.php$
+        pass_filenames: false
+        
+      - id: typescript-type-check
+        name: TypeScript Type Check
+        entry: bash -c 'if [ -f "docker-compose.yml" ] && command -v docker-compose &> /dev/null; then docker-compose exec -T node npm run type-check; else npm run type-check; fi'
+        language: system
+        files: \.(ts|tsx)$
+        pass_filenames: false
+        
+      - id: eslint
+        name: ESLint
+        entry: bash -c 'if [ -f "docker-compose.yml" ] && command -v docker-compose &> /dev/null; then docker-compose exec -T node npm run lint; else npm run lint; fi'
+        language: system
+        files: \.(ts|tsx|js|jsx)$
+        pass_filenames: false
