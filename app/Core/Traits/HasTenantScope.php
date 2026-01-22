@@ -40,16 +40,16 @@ trait HasTenantScope
     }
 
     /**
-     * Obține ID-ul tenant-ului curent
+     * Get the current tenant ID
      */
     protected static function getCurrentTenantId(): ?int
     {
-        // Încearcă să obțină din request (setat de middleware)
+        // Try to get from request (set by middleware)
         $tenantId = request()->header('X-Tenant-ID')
             ?? request()->input('organization_id')
             ?? session('tenant_id');
 
-        // Dacă nu există în request, încearcă din user autentificat
+        // If not found in request, try from authenticated user
         if (! $tenantId && Auth::check()) {
             $user = Auth::user();
             $tenantId = $user->current_organization_id ?? $user->organizations()->first()?->id;

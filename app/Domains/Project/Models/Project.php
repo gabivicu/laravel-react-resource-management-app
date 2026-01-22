@@ -66,7 +66,7 @@ class Project extends Model
     }
 
     /**
-     * Task-urile proiectului
+     * Tasks of the project
      */
     public function tasks(): HasMany
     {

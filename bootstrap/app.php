@@ -12,12 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Middleware pentru multi-tenancy
+        // Middleware for multi-tenancy
         $middleware->alias([
             'tenant' => \App\Core\Middleware\TenantScopeMiddleware::class,
         ]);
 
-        // Configure CORS pentru API
+        // Configure CORS for API
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);

@@ -6,8 +6,8 @@ return [
     | Multi-Tenancy Configuration
     |--------------------------------------------------------------------------
     |
-    | Configurație pentru sistemul multi-tenant. Definește comportamentul
-    | pentru izolarea datelor între organizații (tenants).
+    | Configuration for the multi-tenant system. Defines the behavior
+    | for data isolation between organizations (tenants).
     |
     */
 
@@ -16,11 +16,11 @@ return [
     | Tenant Resolution Strategy
     |--------------------------------------------------------------------------
     |
-    | Strategia folosită pentru identificarea tenant-ului curent:
-    | - 'header': Din header-ul X-Tenant-ID
-    | - 'domain': Din domeniul request-ului
-    | - 'session': Din sesiune
-    | - 'user': Din organizația curentă a utilizatorului autentificat
+    | Strategy used to identify the current tenant:
+    | - 'header': From X-Tenant-ID header
+    | - 'domain': From request domain
+    | - 'session': From session
+    | - 'user': From authenticated user's current organization
     |
     */
 
@@ -31,7 +31,7 @@ return [
     | Tenant Header Name
     |--------------------------------------------------------------------------
     |
-    | Numele header-ului HTTP folosit pentru identificarea tenant-ului
+    | HTTP header name used for tenant identification
     |
     */
 
@@ -42,8 +42,8 @@ return [
     | Require Tenant
     |--------------------------------------------------------------------------
     |
-    | Dacă este true, toate request-urile trebuie să aibă un tenant setat.
-    | Dacă este false, request-urile fără tenant sunt permise.
+    | If true, all requests must have a tenant set.
+    | If false, requests without tenant are allowed.
     |
     */
 
@@ -54,7 +54,7 @@ return [
     | Tenant Column Name
     |--------------------------------------------------------------------------
     |
-    | Numele coloanei folosită pentru identificarea tenant-ului în tabele
+    | Column name used for tenant identification in tables
     |
     */
 

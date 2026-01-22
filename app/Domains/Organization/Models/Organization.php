@@ -53,7 +53,7 @@ class Organization extends Model
     }
 
     /**
-     * Proiectele organizației
+     * Projects of the organization
      */
     public function projects(): HasMany
     {

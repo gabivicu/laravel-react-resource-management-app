@@ -13,7 +13,7 @@ class PermissionSeeder extends Seeder
         $permissions = config('permissions.default_permissions');
         $permissionGroups = config('permissions.permission_groups');
 
-        // Creează permisiunile
+        // Create permissions
         foreach ($permissions as $permissionSlug) {
             $group = explode('.', $permissionSlug)[0];
             $groupName = $permissionGroups[$group] ?? ucfirst($group);
@@ -28,14 +28,14 @@ class PermissionSeeder extends Seeder
             );
         }
 
-        // Creează rolurile globale (fără organizație)
+        // Create global roles (without organization)
         $this->createGlobalRoles();
 
         $this->command->info('Permissions and roles seeded successfully.');
     }
 
     /**
-     * Creează rolurile globale
+     * Create global roles
      */
     protected function createGlobalRoles(): void
     {
@@ -51,13 +51,13 @@ class PermissionSeeder extends Seeder
                 ]
             );
 
-            // Atribuie permisiuni bazate pe rol
+            // Assign permissions based on role
             $this->assignPermissionsToRole($role, $roleKey);
         }
     }
 
     /**
-     * Atribuie permisiuni unui rol bazat pe tipul de rol
+     * Assign permissions to a role based on role type
      */
     protected function assignPermissionsToRole(Role $role, string $roleKey): void
     {
@@ -65,12 +65,12 @@ class PermissionSeeder extends Seeder
 
         switch ($roleKey) {
             case 'admin':
-                // Admin are toate permisiunile
+                // Admin has all permissions
                 $role->permissions()->sync($permissions->pluck('id'));
                 break;
 
             case 'project_manager':
-                // Project Manager poate gestiona proiecte, task-uri și resurse
+                // Project Manager can manage projects, tasks and resources
                 $allowedPermissions = $permissions->filter(function ($permission) {
                     return str_starts_with($permission->slug, 'projects.')
                         || str_starts_with($permission->slug, 'tasks.')
@@ -81,7 +81,7 @@ class PermissionSeeder extends Seeder
                 break;
 
             case 'developer':
-                // Developer poate vedea și lucra la task-uri
+                // Developer can view and work on tasks
                 $allowedPermissions = $permissions->filter(function ($permission) {
                     return str_starts_with($permission->slug, 'tasks.view')
                         || str_starts_with($permission->slug, 'tasks.update')
@@ -93,7 +93,7 @@ class PermissionSeeder extends Seeder
     }
 
     /**
-     * Formatează numele permisiunii pentru afișare
+     * Format permission name for display
      */
     protected function formatPermissionName(string $slug): string
     {

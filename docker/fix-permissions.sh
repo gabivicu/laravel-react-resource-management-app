@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Script pentru fixarea permisiunilor în Docker container
+# Script for fixing permissions in Docker container
 
 echo "🔧 Fixing permissions in Docker containers..."
 
-# Fix permissions în app container
+# Fix permissions in app container
 docker-compose exec -T app bash -c "
     mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
     chown -R www-data:www-data storage bootstrap/cache

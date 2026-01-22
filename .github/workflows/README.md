@@ -2,31 +2,31 @@
 
 ## Code Quality Checks
 
-Workflow-ul `code-quality.yml` verifică automat calitatea codului la fiecare push sau pull request pe branch-urile `main` și `develop`.
+The `code-quality.yml` workflow automatically checks code quality on every push or pull request to `main` and `develop` branches.
 
-### Ce verifică:
+### What it checks:
 
 #### Backend (PHP)
-- ✅ **Laravel Pint** - Verifică și corectează stilul codului PHP (PSR-12)
-- ✅ **PHPUnit** - Rulează toate testele PHP
+- ✅ **Laravel Pint** - Checks and fixes PHP code style (PSR-12)
+- ✅ **PHPUnit** - Runs all PHP tests
 
 #### Frontend (TypeScript/React)
-- ✅ **TypeScript Type Check** - Verifică erorile de tip
-- ✅ **ESLint** - Verifică calitatea codului JavaScript/TypeScript
-- ✅ **Vitest** - Rulează testele frontend
+- ✅ **TypeScript Type Check** - Checks for type errors
+- ✅ **ESLint** - Checks JavaScript/TypeScript code quality
+- ✅ **Vitest** - Runs frontend tests
 
 #### Build
-- ✅ **Build Check** - Verifică dacă aplicația se poate construi cu succes
+- ✅ **Build Check** - Verifies that the application can be built successfully
 
-### Cum funcționează:
+### How it works:
 
-1. La fiecare push sau pull request, GitHub Actions pornește automat workflow-ul
-2. Fiecare job rulează în paralel pentru viteză maximă
-3. Dacă orice verificare eșuează, workflow-ul se oprește și primești o notificare
+1. On every push or pull request, GitHub Actions automatically starts the workflow
+2. Each job runs in parallel for maximum speed
+3. If any check fails, the workflow stops and you receive a notification
 
-### Verificare locală:
+### Local verification:
 
-Poți rula aceleași verificări local înainte de push:
+You can run the same checks locally before pushing:
 
 ```bash
 # PHP Code Style
@@ -48,8 +48,8 @@ npm run test
 npm run build
 ```
 
-### Rezolvarea problemelor:
+### Troubleshooting:
 
-- **Laravel Pint eșuează**: Rulează `./vendor/bin/pint` pentru a corecta automat stilul
-- **ESLint eșuează**: Rulează `npm run lint:fix` pentru a corecta automat problemele
-- **Testele eșuează**: Verifică testele local cu `php artisan test` sau `npm run test`
+- **Laravel Pint fails**: Run `./vendor/bin/pint` to automatically fix the style
+- **ESLint fails**: Run `npm run lint:fix` to automatically fix issues
+- **Tests fail**: Check tests locally with `php artisan test` or `npm run test`

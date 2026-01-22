@@ -5,7 +5,7 @@ namespace App\Core\Exceptions;
 use Exception;
 
 /**
- * Exception pentru erori în Repository layer
+ * Exception for errors in Repository layer
  */
 class RepositoryException extends Exception
 {

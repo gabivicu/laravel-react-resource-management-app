@@ -6,7 +6,7 @@ return [
     | RBAC Configuration
     |--------------------------------------------------------------------------
     |
-    | Configurație pentru sistemul de roluri și permisiuni (RBAC)
+    | Configuration for the role and permission system (RBAC)
     |
     */
 
@@ -15,7 +15,7 @@ return [
     | Default Roles
     |--------------------------------------------------------------------------
     |
-    | Rolurile implicite create pentru fiecare organizație nouă
+    | Default roles created for each new organization
     |
     */
 
@@ -45,7 +45,7 @@ return [
     | Permission Groups
     |--------------------------------------------------------------------------
     |
-    | Grupurile de permisiuni pentru organizare
+    | Permission groups for organization
     |
     */
 
@@ -63,7 +63,7 @@ return [
     | Default Permissions
     |--------------------------------------------------------------------------
     |
-    | Permisiunile implicite create în sistem
+    | Default permissions created in the system
     |
     */
 

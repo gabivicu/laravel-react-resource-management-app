@@ -28,7 +28,7 @@ class Role extends Model
     ];
 
     /**
-     * Permisiunile asociate acestui rol
+     * Permissions associated with this role
      */
     public function permissions(): BelongsToMany
     {
@@ -55,7 +55,7 @@ class Role extends Model
     }
 
     /**
-     * Verifică dacă rolul are o permisiune specifică
+     * Check if the role has a specific permission
      */
     public function hasPermission(string $permission): bool
     {
@@ -71,7 +71,7 @@ class Role extends Model
     }
 
     /**
-     * Scope pentru roluri globale (fără organizație)
+     * Scope for global roles (without organization)
      */
     public function scopeGlobal($query)
     {

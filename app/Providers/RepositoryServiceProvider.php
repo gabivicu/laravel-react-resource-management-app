@@ -5,9 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * Service Provider pentru binding-uri Repository
+ * Service Provider for Repository bindings
  *
- * Aici se înregistrează toate repository-urile și interfețele lor
+ * All repositories and their interfaces are registered here
  */
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -16,8 +16,8 @@ class RepositoryServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Binding-uri pentru repositories vor fi adăugate aici
-        // Exemplu:
+        // Repository bindings will be added here
+        // Example:
         // $this->app->bind(
         //     \App\Domains\Project\Repositories\Contracts\ProjectRepositoryInterface::class,
         //     \App\Domains\Project\Repositories\ProjectRepository::class

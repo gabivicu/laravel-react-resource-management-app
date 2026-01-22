@@ -19,7 +19,7 @@ return new class extends Migration
             $table->dateTime('due_date')->nullable();
             $table->decimal('estimated_hours', 8, 2)->nullable();
             $table->decimal('actual_hours', 8, 2)->nullable();
-            $table->integer('order')->default(0); // Pentru sortare în Kanban
+            $table->integer('order')->default(0); // For sorting in Kanban board
             $table->timestamps();
             $table->softDeletes();
 

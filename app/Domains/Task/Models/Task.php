@@ -53,7 +53,7 @@ class Task extends Model
     }
 
     /**
-     * Utilizatorii asignați la task
+     * Users assigned to the task
      */
     public function assignees(): BelongsToMany
     {

@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { ApiResponse } from '@/types';
 
 /**
- * Axios instance configurat pentru API-ul Laravel
+ * Axios instance configured for Laravel API
  */
 // Use relative URL to avoid CORS issues when frontend and backend are on same origin
 // If VITE_API_URL is set to absolute URL, it will be used; otherwise use relative path
@@ -24,7 +24,7 @@ const api: AxiosInstance = axios.create({
     withCredentials: true,
 });
 
-// Request interceptor pentru a adăuga tenant ID și token
+// Request interceptor to add tenant ID and token
 api.interceptors.request.use(
     (config) => {
         const tenantId = localStorage.getItem('tenant_id');
@@ -45,19 +45,19 @@ api.interceptors.request.use(
     }
 );
 
-// Response interceptor pentru gestionarea erorilor
+// Response interceptor for error handling
 api.interceptors.response.use(
     (response) => response,
     (error: AxiosError<ApiResponse>) => {
         if (error.response?.status === 401) {
-            // Unauthorized - redirect la login
+            // Unauthorized - redirect to login
             localStorage.removeItem('auth_token');
             localStorage.removeItem('tenant_id');
             window.location.href = '/login';
         }
 
         if (error.response?.status === 403) {
-            // Forbidden - nu are permisiuni
+            // Forbidden - user does not have permissions
             console.error('Access forbidden');
         }
 

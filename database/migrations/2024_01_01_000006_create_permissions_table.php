@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->string('group')->nullable(); // Pentru organizare (ex: 'projects', 'tasks')
+            $table->string('group')->nullable(); // For organization (e.g., 'projects', 'tasks')
             $table->timestamps();
 
             $table->index('slug');

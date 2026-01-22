@@ -1,5 +1,5 @@
 /**
- * TypeScript types pentru aplicație
+ * TypeScript types for the application
  */
 
 export interface User {

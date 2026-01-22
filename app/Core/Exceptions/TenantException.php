@@ -5,7 +5,7 @@ namespace App\Core\Exceptions;
 use Exception;
 
 /**
- * Exception pentru erori legate de multi-tenancy
+ * Exception for multi-tenancy related errors
  */
 class TenantException extends Exception
 {

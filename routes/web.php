@@ -2,13 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Ruta root
+// Root route
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Catch-all route pentru SPA - toate rutele (exceptând API și asset-uri) trebuie să returneze welcome.blade.php
-// Aceasta permite React Router să gestioneze rutele client-side
+// Catch-all route for SPA - all routes (except API and assets) should return welcome.blade.php
+// This allows React Router to handle client-side routing
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '^(?!api|build|storage|hot).*$');

@@ -90,7 +90,7 @@ abstract class BaseRepository implements RepositoryInterface
     }
 
     /**
-     * Șterge o înregistrare
+     * Delete a record
      */
     public function delete(int $id): bool
     {

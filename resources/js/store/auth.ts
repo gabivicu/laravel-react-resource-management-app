@@ -48,14 +48,14 @@ export const useAuthStore = create<AuthState>()(
 
                 const { user, token, organization } = response.data.data;
 
-                // Salvăm token-ul în localStorage imediat
+                // Save token to localStorage immediately
                 localStorage.setItem('auth_token', token);
                 if (organization) {
                     localStorage.setItem('tenant_id', organization.id.toString());
                 }
                 api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-                // Actualizăm starea Zustand
+                // Update Zustand state
                 set({
                     user,
                     token,
@@ -69,14 +69,14 @@ export const useAuthStore = create<AuthState>()(
 
                 const { user, token, organization } = response.data.data;
 
-                // Salvăm token-ul în localStorage imediat
+                // Save token to localStorage immediately
                 localStorage.setItem('auth_token', token);
                 if (organization) {
                     localStorage.setItem('tenant_id', organization.id.toString());
                 }
                 api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-                // Actualizăm starea Zustand
+                // Update Zustand state
                 set({
                     user,
                     token,
