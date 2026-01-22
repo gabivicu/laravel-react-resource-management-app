@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '@/services/projects';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Modal from '@/components/ui/Modal';
+import ProjectForm from './ProjectForm';
 
 const statusColors = {
     planning: 'bg-gray-100 text-gray-800',
@@ -13,6 +15,10 @@ const statusColors = {
 
 export default function ProjectList() {
     const [statusFilter, setStatusFilter] = useState<string>('');
+    const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    
     const queryClient = useQueryClient();
 
     const { data, isLoading, error } = useQuery({
@@ -28,6 +34,20 @@ export default function ProjectList() {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         },
     });
+
+    const openEditModal = (projectId: number) => {
+        setEditingProjectId(projectId);
+        setIsEditModalOpen(true);
+    };
+
+    const closeModals = () => {
+        setIsCreateModalOpen(false);
+        setIsEditModalOpen(false);
+        // Delay clearing the editingProjectId to allow the exit animation to complete
+        setTimeout(() => {
+            setEditingProjectId(null);
+        }, 300);
+    };
 
     if (isLoading) {
         return (
@@ -51,12 +71,12 @@ export default function ProjectList() {
         <div className="w-full">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
-                <Link
-                    to="/projects/create"
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
                     className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
                 >
                     + New Project
-                </Link>
+                </button>
             </div>
 
             {/* Filters */}
@@ -79,12 +99,12 @@ export default function ProjectList() {
             {projects.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                     <p className="mb-4">No projects found.</p>
-                    <Link
-                        to="/projects/create"
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="text-blue-600 hover:text-blue-700"
                     >
                         Create your first project
-                    </Link>
+                    </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -128,23 +148,23 @@ export default function ProjectList() {
                             <div className="flex gap-2">
                                 <Link
                                     to={`/projects/${project.id}`}
-                                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded text-center hover:bg-blue-100"
+                                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded text-center hover:bg-blue-100 transition-colors"
                                 >
                                     View
                                 </Link>
-                                <Link
-                                    to={`/projects/${project.id}/edit`}
-                                    className="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded text-center hover:bg-gray-100"
+                                <button
+                                    onClick={() => openEditModal(project.id)}
+                                    className="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded text-center hover:bg-gray-100 transition-colors"
                                 >
                                     Edit
-                                </Link>
+                                </button>
                                 <button
                                     onClick={() => {
                                         if (confirm('Are you sure you want to delete this project?')) {
                                             deleteMutation.mutate(project.id);
                                         }
                                     }}
-                                    className="px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                                    className="px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
                                     disabled={deleteMutation.isPending}
                                 >
                                     {deleteMutation.isPending ? '...' : 'Delete'}
@@ -154,6 +174,33 @@ export default function ProjectList() {
                     ))}
                 </div>
             )}
+
+            {/* Create Project Modal */}
+            <Modal
+                isOpen={isCreateModalOpen}
+                onClose={closeModals}
+                title="Create New Project"
+            >
+                <ProjectForm
+                    onSuccess={closeModals}
+                    onCancel={closeModals}
+                />
+            </Modal>
+
+            {/* Edit Project Modal */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={closeModals}
+                title="Edit Project"
+            >
+                {editingProjectId && (
+                    <ProjectForm
+                        projectId={editingProjectId}
+                        onSuccess={closeModals}
+                        onCancel={closeModals}
+                    />
+                )}
+            </Modal>
         </div>
     );
 }

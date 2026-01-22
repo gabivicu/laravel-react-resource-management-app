@@ -32,7 +32,7 @@ class ProjectService
     /**
      * Get project by ID with relations
      */
-    public function find(int $id, array $relations = ['members.user', 'tasks.assignees']): ?Project
+    public function find(int $id, array $relations = ['members', 'tasks.assignees']): ?Project
     {
         return $this->projectRepository->findWithRelations($id, $relations);
     }

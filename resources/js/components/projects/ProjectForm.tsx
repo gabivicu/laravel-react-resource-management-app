@@ -13,10 +13,19 @@ interface ProjectFormData {
     budget: string;
 }
 
-export default function ProjectForm() {
-    const { id } = useParams<{ id: string }>();
+interface ProjectFormProps {
+    projectId?: number;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+}
+
+export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectFormProps) {
+    const { id: routeId } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    
+    // Determine if we are editing based on props OR route param
+    const id = projectId || (routeId ? Number(routeId) : undefined);
     const isEdit = !!id;
 
     const [formData, setFormData] = useState<ProjectFormData>({
@@ -31,20 +40,47 @@ export default function ProjectForm() {
     const [errors, setErrors] = useState<Record<string, string[]>>({});
 
     // Load project data if editing
-    const { data: project, isLoading } = useQuery({
+    const { data: project, isLoading, error: projectError } = useQuery({
         queryKey: ['project', id],
         queryFn: () => projectService.getProject(Number(id!)),
-        enabled: isEdit,
+        enabled: isEdit && !!id,
     });
 
     useEffect(() => {
         if (project && isEdit) {
+            // Helper function to format date for input[type="date"]
+            const formatDateForInput = (dateValue: string | null | undefined): string => {
+                if (!dateValue) return '';
+                
+                try {
+                    // Handle ISO date strings (e.g., "2025-11-20T00:00:00.000000Z")
+                    // Extract just the date part if it's a full ISO string
+                    const dateStr = dateValue.toString().split('T')[0];
+                    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        return dateStr;
+                    }
+                    
+                    // Otherwise, try parsing as Date
+                    const date = new Date(dateValue);
+                    if (isNaN(date.getTime())) return '';
+                    
+                    // Format as YYYY-MM-DD for input[type="date"]
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                } catch (e) {
+                    console.error('Error formatting date:', e, dateValue);
+                    return '';
+                }
+            };
+
             setFormData({
-                name: project.name,
+                name: project.name || '',
                 description: project.description || '',
-                status: project.status,
-                start_date: project.start_date ? new Date(project.start_date).toISOString().split('T')[0] : '',
-                end_date: project.end_date ? new Date(project.end_date).toISOString().split('T')[0] : '',
+                status: project.status || 'planning',
+                start_date: formatDateForInput(project.start_date),
+                end_date: formatDateForInput(project.end_date),
                 budget: project.budget?.toString() || '',
             });
         }
@@ -54,7 +90,11 @@ export default function ProjectForm() {
         mutationFn: projectService.createProject,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-            navigate('/projects');
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate('/projects');
+            }
         },
         onError: (error: any) => {
             if (error.response?.data?.errors) {
@@ -68,7 +108,11 @@ export default function ProjectForm() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['project', id] });
-            navigate('/projects');
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate('/projects');
+            }
         },
         onError: (error: any) => {
             if (error.response?.data?.errors) {
@@ -97,19 +141,40 @@ export default function ProjectForm() {
         }
     };
 
+    const handleCancel = () => {
+        if (onCancel) {
+            onCancel();
+        } else {
+            navigate('/projects');
+        }
+    };
+
     if (isEdit && isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-8 text-center">Loading...</div>;
+    }
+
+    if (isEdit && projectError) {
+        return (
+            <div className="p-8">
+                <div className="bg-red-50 text-red-600 rounded p-4">
+                    Error loading project: {projectError instanceof Error ? projectError.message : 'Unknown error'}
+                </div>
+            </div>
+        );
     }
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6">
-                {isEdit ? 'Edit Project' : 'Create New Project'}
-            </h2>
+            {/* Show title only if not in modal (no projectId prop AND no onSuccess callback) */}
+            {!projectId && !onSuccess && (
+                <h2 className="text-2xl font-bold mb-6">
+                    {isEdit ? 'Edit Project' : 'Create New Project'}
+                </h2>
+            )}
 
-            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow">
+            <form onSubmit={handleSubmit} className={projectId || onSuccess ? "" : "bg-white p-6 rounded-lg shadow"}>
                 {/* Name */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">Project Name *</label>
@@ -117,8 +182,8 @@ export default function ProjectForm() {
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-lg ${
-                            errors.name ? 'border-red-500' : ''
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${
+                            errors.name ? 'border-red-500' : 'border-gray-300'
                         }`}
                         required
                     />
@@ -134,7 +199,7 @@ export default function ProjectForm() {
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         rows={4}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                     />
                 </div>
 
@@ -144,7 +209,7 @@ export default function ProjectForm() {
                     <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as Project['status'] })}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                     >
                         <option value="planning">Planning</option>
                         <option value="active">Active</option>
@@ -162,7 +227,7 @@ export default function ProjectForm() {
                             type="date"
                             value={formData.start_date}
                             onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         />
                     </div>
                     <div>
@@ -171,7 +236,7 @@ export default function ProjectForm() {
                             type="date"
                             value={formData.end_date}
                             onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         />
                     </div>
                 </div>
@@ -185,7 +250,7 @@ export default function ProjectForm() {
                         min="0"
                         value={formData.budget}
                         onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         placeholder="0.00"
                     />
                 </div>
@@ -195,14 +260,14 @@ export default function ProjectForm() {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
                     >
                         {isSubmitting ? 'Saving...' : isEdit ? 'Update Project' : 'Create Project'}
                     </button>
                     <button
                         type="button"
-                        onClick={() => navigate('/projects')}
-                        className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                        onClick={handleCancel}
+                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         Cancel
                     </button>

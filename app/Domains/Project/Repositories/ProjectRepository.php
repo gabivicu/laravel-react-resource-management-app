@@ -47,7 +47,7 @@ class ProjectRepository extends BaseRepository implements RepositoryInterface
     /**
      * Get project with all relationships
      */
-    public function findWithRelations(int $id, array $relations = ['members.user', 'tasks.assignees']): ?Project
+    public function findWithRelations(int $id, array $relations = ['members', 'tasks.assignees']): ?Project
     {
         return $this->query()->with($relations)->find($id);
     }
