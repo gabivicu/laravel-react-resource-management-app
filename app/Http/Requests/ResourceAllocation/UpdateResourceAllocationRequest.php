@@ -10,7 +10,11 @@ class UpdateResourceAllocationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $allocation = \App\Domains\Resource\Models\ResourceAllocation::find(
+            $this->route('resource-allocation') ?? $this->route('id')
+        );
+
+        return $allocation && $this->user()->can('update', $allocation);
     }
 
     public function rules(): array

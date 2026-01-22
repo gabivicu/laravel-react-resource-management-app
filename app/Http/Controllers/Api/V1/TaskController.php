@@ -18,6 +18,8 @@ class TaskController extends BaseController
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', \App\Domains\Task\Models\Task::class);
+
         $filters = $request->only(['project_id', 'status', 'priority', 'search']);
         $perPage = $request->get('per_page', 15);
 
@@ -73,6 +75,8 @@ class TaskController extends BaseController
             return $this->error('Task not found', 404);
         }
 
+        $this->authorize('view', $task);
+
         return $this->success($task, 'Task retrieved successfully');
     }
 
@@ -81,6 +85,14 @@ class TaskController extends BaseController
      */
     public function update(UpdateTaskRequest $request, int $id)
     {
+        $task = $this->taskService->find($id);
+
+        if (! $task) {
+            return $this->error('Task not found', 404);
+        }
+
+        $this->authorize('update', $task);
+
         $task = $this->taskService->update($id, $request->validated());
 
         return $this->success($task, 'Task updated successfully');
@@ -110,6 +122,14 @@ class TaskController extends BaseController
      */
     public function destroy(int $id)
     {
+        $task = $this->taskService->find($id);
+
+        if (! $task) {
+            return $this->error('Task not found', 404);
+        }
+
+        $this->authorize('delete', $task);
+
         $deleted = $this->taskService->delete($id);
 
         if (! $deleted) {

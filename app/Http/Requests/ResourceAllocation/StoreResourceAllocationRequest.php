@@ -10,7 +10,7 @@ class StoreResourceAllocationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', \App\Domains\Resource\Models\ResourceAllocation::class);
     }
 
     public function rules(): array

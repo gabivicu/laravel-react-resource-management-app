@@ -18,6 +18,8 @@ class ResourceAllocationController extends BaseController
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', \App\Domains\Resource\Models\ResourceAllocation::class);
+
         $filters = $request->only(['project_id', 'user_id', 'active', 'date_from', 'date_to']);
         $perPage = $request->get('per_page', 15);
 
@@ -61,6 +63,8 @@ class ResourceAllocationController extends BaseController
             return $this->error('Resource allocation not found', 404);
         }
 
+        $this->authorize('view', $allocation);
+
         return $this->success($allocation, 'Resource allocation retrieved successfully');
     }
 
@@ -69,6 +73,14 @@ class ResourceAllocationController extends BaseController
      */
     public function update(UpdateResourceAllocationRequest $request, int $id)
     {
+        $allocation = $this->allocationService->find($id);
+
+        if (! $allocation) {
+            return $this->error('Resource allocation not found', 404);
+        }
+
+        $this->authorize('update', $allocation);
+
         try {
             $allocation = $this->allocationService->update($id, $request->validated());
 
@@ -83,6 +95,14 @@ class ResourceAllocationController extends BaseController
      */
     public function destroy(int $id)
     {
+        $allocation = $this->allocationService->find($id);
+
+        if (! $allocation) {
+            return $this->error('Resource allocation not found', 404);
+        }
+
+        $this->authorize('delete', $allocation);
+
         $deleted = $this->allocationService->delete($id);
 
         if (! $deleted) {

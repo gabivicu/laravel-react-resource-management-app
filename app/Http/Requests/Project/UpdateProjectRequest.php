@@ -10,7 +10,9 @@ class UpdateProjectRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $project = \App\Domains\Project\Models\Project::find($this->route('project') ?? $this->route('id'));
+
+        return $project && $this->user()->can('update', $project);
     }
 
     public function rules(): array

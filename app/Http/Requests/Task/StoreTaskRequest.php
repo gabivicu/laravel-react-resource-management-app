@@ -10,7 +10,7 @@ class StoreTaskRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', \App\Domains\Task\Models\Task::class);
     }
 
     public function rules(): array

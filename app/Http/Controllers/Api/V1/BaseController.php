@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -10,6 +11,8 @@ use Illuminate\Http\JsonResponse;
  */
 class BaseController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Success response
      */

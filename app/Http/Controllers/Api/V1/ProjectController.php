@@ -18,6 +18,8 @@ class ProjectController extends BaseController
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', \App\Domains\Project\Models\Project::class);
+
         $filters = $request->only(['status', 'search']);
         $perPage = $request->get('per_page', 15);
 
@@ -63,6 +65,8 @@ class ProjectController extends BaseController
             return $this->error('Project not found', 404);
         }
 
+        $this->authorize('view', $project);
+
         return $this->success($project, 'Project retrieved successfully');
     }
 
@@ -71,6 +75,14 @@ class ProjectController extends BaseController
      */
     public function update(UpdateProjectRequest $request, int $id)
     {
+        $project = $this->projectService->find($id);
+
+        if (! $project) {
+            return $this->error('Project not found', 404);
+        }
+
+        $this->authorize('update', $project);
+
         $project = $this->projectService->update($id, $request->validated());
 
         return $this->success($project, 'Project updated successfully');
@@ -81,6 +93,14 @@ class ProjectController extends BaseController
      */
     public function destroy(int $id)
     {
+        $project = $this->projectService->find($id);
+
+        if (! $project) {
+            return $this->error('Project not found', 404);
+        }
+
+        $this->authorize('delete', $project);
+
         $deleted = $this->projectService->delete($id);
 
         if (! $deleted) {

@@ -10,7 +10,7 @@ class StoreProjectRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', \App\Domains\Project\Models\Project::class);
     }
 
     public function rules(): array
