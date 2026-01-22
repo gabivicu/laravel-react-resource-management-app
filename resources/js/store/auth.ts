@@ -41,56 +41,48 @@ export const useAuthStore = create<AuthState>()(
             },
 
             login: async (email: string, password: string) => {
-                try {
-                    const response = await api.post<{ data: { user: User; token: string; organization: Organization } }>('/auth/login', {
-                        email,
-                        password,
-                    });
+                const response = await api.post<{ data: { user: User; token: string; organization: Organization } }>('/auth/login', {
+                    email,
+                    password,
+                });
 
-                    const { user, token, organization } = response.data.data;
+                const { user, token, organization } = response.data.data;
 
-                    // Salvăm token-ul în localStorage imediat
-                    localStorage.setItem('auth_token', token);
-                    if (organization) {
-                        localStorage.setItem('tenant_id', organization.id.toString());
-                    }
-                    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-                    // Actualizăm starea Zustand
-                    set({
-                        user,
-                        token,
-                        currentOrganization: organization,
-                        isAuthenticated: true,
-                    });
-                } catch (error) {
-                    throw error;
+                // Salvăm token-ul în localStorage imediat
+                localStorage.setItem('auth_token', token);
+                if (organization) {
+                    localStorage.setItem('tenant_id', organization.id.toString());
                 }
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                // Actualizăm starea Zustand
+                set({
+                    user,
+                    token,
+                    currentOrganization: organization,
+                    isAuthenticated: true,
+                });
             },
 
             register: async (data: any) => {
-                try {
-                    const response = await api.post<{ data: { user: User; token: string; organization: Organization } }>('/auth/register', data);
+                const response = await api.post<{ data: { user: User; token: string; organization: Organization } }>('/auth/register', data);
 
-                    const { user, token, organization } = response.data.data;
+                const { user, token, organization } = response.data.data;
 
-                    // Salvăm token-ul în localStorage imediat
-                    localStorage.setItem('auth_token', token);
-                    if (organization) {
-                        localStorage.setItem('tenant_id', organization.id.toString());
-                    }
-                    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-                    // Actualizăm starea Zustand
-                    set({
-                        user,
-                        token,
-                        currentOrganization: organization,
-                        isAuthenticated: true,
-                    });
-                } catch (error) {
-                    throw error;
+                // Salvăm token-ul în localStorage imediat
+                localStorage.setItem('auth_token', token);
+                if (organization) {
+                    localStorage.setItem('tenant_id', organization.id.toString());
                 }
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                // Actualizăm starea Zustand
+                set({
+                    user,
+                    token,
+                    currentOrganization: organization,
+                    isAuthenticated: true,
+                });
             },
 
             logout: () => {

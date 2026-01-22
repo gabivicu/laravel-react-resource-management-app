@@ -3,7 +3,7 @@ import { taskService } from '@/services/tasks';
 import { projectService } from '@/services/projects';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { Task, Project } from '@/types';
+import type { Task } from '@/types';
 
 interface TaskFormData {
     project_id: string;

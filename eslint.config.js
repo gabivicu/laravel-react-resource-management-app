@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import globals from 'globals';
 
 export default [
   {
@@ -14,7 +15,9 @@ export default [
     languageOptions: {
       ecmaVersion: 2020,
       globals: {
-        ...globalThis,
+        ...globals.browser,
+        ...globals.node,
+        React: 'readonly',
       },
       parser: tsparser,
       parserOptions: {
@@ -38,8 +41,12 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+      'react/no-unescaped-entities': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': 'off', // Use TypeScript version instead
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-useless-catch': 'warn',
     },
     settings: {
       react: {

@@ -1,15 +1,8 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import type { Organization } from '@/types';
 import { useAuthStore } from '@/store/auth';
 import api from '@/services/api';
-
-interface TenantContextType {
-    currentTenant: Organization | null;
-    setTenant: (tenantId: number) => Promise<void>;
-    isLoading: boolean;
-}
-
-const TenantContext = createContext<TenantContextType | undefined>(undefined);
+import { TenantContext } from './TenantContext';
 
 export function TenantProvider({ children }: { children: ReactNode }) {
     const { currentOrganization, setCurrentOrganization } = useAuthStore();
@@ -46,10 +39,3 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     );
 }
 
-export function useTenant() {
-    const context = useContext(TenantContext);
-    if (context === undefined) {
-        throw new Error('useTenant must be used within a TenantProvider');
-    }
-    return context;
-}
