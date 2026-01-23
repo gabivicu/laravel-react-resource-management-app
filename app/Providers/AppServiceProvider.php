@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Domains\Project\Models\Project;
+use App\Domains\Resource\Models\ResourceAllocation;
+use App\Domains\Task\Models\Task;
+use App\Observers\ProjectObserver;
+use App\Observers\ResourceAllocationObserver;
+use App\Observers\TaskObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Project::observe(ProjectObserver::class);
+        Task::observe(TaskObserver::class);
+        ResourceAllocation::observe(ResourceAllocationObserver::class);
     }
 }
