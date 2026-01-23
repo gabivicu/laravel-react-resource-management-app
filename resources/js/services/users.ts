@@ -19,16 +19,26 @@ export const userService = {
     /**
      * Get paginated list of users
      */
-    async getUsers(filters: UserFilters = {}, perPage: number = 15): Promise<UserListResponse> {
+    async getUsers(filters: UserFilters = {}, page: number = 1, perPage: number = 15): Promise<UserListResponse> {
         const response = await api.get<ApiResponse<User[]>>('/users', {
             params: {
                 ...filters,
+                page,
                 per_page: perPage,
             },
         });
+        
+        const responseData = response.data;
+        const pagination = responseData.meta || responseData.pagination || {
+            current_page: responseData.current_page,
+            last_page: responseData.last_page,
+            per_page: responseData.per_page,
+            total: responseData.total
+        };
+
         return {
-            data: response.data.data || [],
-            pagination: response.data.pagination,
+            data: responseData.data || [],
+            pagination: pagination as any,
         };
     },
 
