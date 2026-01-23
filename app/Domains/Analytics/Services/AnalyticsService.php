@@ -37,9 +37,7 @@ class AnalyticsService
      */
     public function getProjectStats(int $organizationId): array
     {
-        $projects = Project::where('organization_id', $organizationId)
-            ->withCount('tasks')
-            ->get();
+        $totalProjects = Project::where('organization_id', $organizationId)->count();
 
         $statusBreakdown = Project::where('organization_id', $organizationId)
             ->select('status', DB::raw('count(*) as count'))
@@ -47,10 +45,14 @@ class AnalyticsService
             ->pluck('count', 'status')
             ->toArray();
 
+        // Calculate average tasks directly without loading all projects
+        $totalTasks = Task::where('organization_id', $organizationId)->count();
+        $avgTasks = $totalProjects > 0 ? $totalTasks / $totalProjects : 0;
+
         return [
-            'total' => $projects->count(),
+            'total' => $totalProjects,
             'by_status' => $statusBreakdown,
-            'average_tasks_per_project' => $projects->avg('tasks_count') ?? 0,
+            'average_tasks_per_project' => round($avgTasks, 2),
         ];
     }
 
@@ -59,7 +61,7 @@ class AnalyticsService
      */
     public function getTaskStats(int $organizationId): array
     {
-        $tasks = Task::where('organization_id', $organizationId)->get();
+        $totalTasks = Task::where('organization_id', $organizationId)->count();
 
         $statusBreakdown = Task::where('organization_id', $organizationId)
             ->select('status', DB::raw('count(*) as count'))
@@ -73,17 +75,22 @@ class AnalyticsService
             ->pluck('count', 'priority')
             ->toArray();
 
-        $totalEstimatedHours = $tasks->sum('estimated_hours') ?? 0;
-        $totalActualHours = $tasks->sum('actual_hours') ?? 0;
+        // Optimize sums by calculating in DB
+        $sums = Task::where('organization_id', $organizationId)
+            ->selectRaw('COALESCE(SUM(estimated_hours), 0) as estimated, COALESCE(SUM(actual_hours), 0) as actual')
+            ->first();
+
+        $totalEstimatedHours = $sums->estimated ?? 0;
+        $totalActualHours = $sums->actual ?? 0;
 
         return [
-            'total' => $tasks->count(),
+            'total' => $totalTasks,
             'by_status' => $statusBreakdown,
             'by_priority' => $priorityBreakdown,
-            'total_estimated_hours' => $totalEstimatedHours,
-            'total_actual_hours' => $totalActualHours,
+            'total_estimated_hours' => (float) $totalEstimatedHours,
+            'total_actual_hours' => (float) $totalActualHours,
             'completion_rate' => $totalEstimatedHours > 0
-                ? ($totalActualHours / $totalEstimatedHours) * 100
+                ? round(($totalActualHours / $totalEstimatedHours) * 100, 2)
                 : 0,
         ];
     }
@@ -103,7 +110,7 @@ class AnalyticsService
 
         $byProject = $allocations->groupBy('project_id')->map(function ($group) {
             return [
-                'project_name' => $group->first()->project->name ?? 'N/A',
+                'project_name' => $group->first()->project->title ?? 'N/A', // Changed from name to title as per Project model
                 'allocations_count' => $group->count(),
                 'total_percentage' => $group->sum('allocation_percentage'),
             ];
