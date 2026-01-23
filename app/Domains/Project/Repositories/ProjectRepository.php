@@ -35,9 +35,10 @@ class ProjectRepository extends BaseRepository implements RepositoryInterface
         }
 
         if (isset($filters['search'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('name', 'like', '%'.$filters['search'].'%')
-                    ->orWhere('description', 'like', '%'.$filters['search'].'%');
+            $searchTerm = strtolower($filters['search']);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(name) LIKE ?', ['%'.$searchTerm.'%'])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ['%'.$searchTerm.'%']);
             });
         }
 
