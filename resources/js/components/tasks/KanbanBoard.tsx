@@ -3,6 +3,7 @@ import { taskService } from '@/services/tasks';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Task } from '@/types';
+import ProjectSelector from '@/components/projects/ProjectSelector';
 
 const statusConfig = {
     todo: { label: 'To Do', color: 'bg-gray-100', textColor: 'text-gray-800' },
@@ -19,17 +20,19 @@ const priorityColors = {
 };
 
 interface KanbanBoardProps {
-    projectId?: number;
+    initialProjectId?: number;
 }
 
-export default function KanbanBoard({ projectId }: KanbanBoardProps) {
+export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     const queryClient = useQueryClient();
+    const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjectId ? initialProjectId.toString() : '');
     const [draggedTask, setDraggedTask] = useState<Task | null>(null);
     const [draggedFrom, setDraggedFrom] = useState<string | null>(null);
 
-    const { data: kanbanData, isLoading } = useQuery({
-        queryKey: ['tasks', 'kanban', projectId],
-        queryFn: () => taskService.getKanbanTasks(projectId),
+    const { data: kanbanData, isLoading, isError, error } = useQuery({
+        queryKey: ['tasks', 'kanban', selectedProjectId],
+        queryFn: () => taskService.getKanbanTasks(selectedProjectId ? Number(selectedProjectId) : undefined),
+        enabled: !!selectedProjectId,
     });
 
     const updateOrderMutation = useMutation({
@@ -56,13 +59,13 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         const newOrder = targetTasks.length + 1;
 
         // Optimistic update
-        queryClient.setQueryData(['tasks', 'kanban', projectId], (old: any) => {
+        queryClient.setQueryData(['tasks', 'kanban', selectedProjectId], (old: any) => {
             if (!old) return old;
 
             const updated = { ...old };
             
             // Remove from old status
-            updated[draggedFrom] = updated[draggedFrom].filter((t: Task) => t.id !== draggedTask.id);
+            updated[draggedFrom!] = updated[draggedFrom!].filter((t: Task) => t.id !== draggedTask.id);
             
             // Add to new status
             updated[targetStatus] = [
@@ -84,10 +87,46 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         setDraggedFrom(null);
     };
 
+    if (!selectedProjectId) {
+        return (
+            <div>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h2 className="text-2xl font-bold text-gray-900">Kanban Board</h2>
+                    <div className="flex gap-4 items-center w-full md:w-auto">
+                        <div className="w-full md:w-64">
+                            <ProjectSelector
+                                value={selectedProjectId}
+                                onChange={(id) => setSelectedProjectId(id)}
+                                label=""
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                    <div className="text-center text-gray-500">
+                        <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p className="text-lg font-medium mb-2">Select a project</p>
+                        <p>Please select a project to view its Kanban board.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
                 <div className="text-gray-500">Loading tasks...</div>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="p-4 bg-red-50 text-red-600 rounded">
+                Error loading Kanban board: {(error as Error).message || 'Unknown error'}
             </div>
         );
     }
@@ -101,15 +140,25 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-gray-900">Kanban Board</h2>
-                <Link
-                    to="/tasks/create"
-                    className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
-                >
-                    + New Task
-                </Link>
+                <div className="flex gap-4 items-center w-full md:w-auto">
+                    <div className="w-full md:w-64">
+                        <ProjectSelector
+                            value={selectedProjectId}
+                            onChange={(id) => setSelectedProjectId(id)}
+                            label=""
+                        />
+                    </div>
+                    <Link
+                        to="/tasks/create"
+                        className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
+                    >
+                        + New Task
+                    </Link>
+                </div>
             </div>
+
             <div className="flex gap-4 overflow-x-auto pb-4">
             {Object.entries(statusConfig).map(([status, config]) => {
                 const statusTasks = tasks[status as keyof typeof tasks] || [];
@@ -129,7 +178,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
                                 </span>
                             </div>
                         </div>
-                        <div className="bg-gray-50 min-h-[400px] p-3 rounded-b-lg space-y-3">
+                        <div className="bg-gray-50 min-h-[400px] p-3 rounded-b-lg space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto">
                             {statusTasks.map((task) => (
                                 <div
                                     key={task.id}
@@ -152,6 +201,12 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
                                         <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                                             {task.description}
                                         </p>
+                                    )}
+
+                                    {task.project && (
+                                        <div className="text-xs text-gray-500 mb-1 font-medium text-blue-600">
+                                            {task.project.name}
+                                        </div>
                                     )}
 
                                     {task.due_date && (
