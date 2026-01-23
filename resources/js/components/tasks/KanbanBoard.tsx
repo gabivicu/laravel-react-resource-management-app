@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/tasks';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import type { Task } from '@/types';
 import ProjectSelector from '@/components/projects/ProjectSelector';
+import Modal from '@/components/ui/Modal';
+import TaskForm from './TaskForm';
 
 const statusConfig = {
     todo: { label: 'To Do', color: 'bg-gray-100', textColor: 'text-gray-800' },
@@ -27,10 +29,10 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
     
-    // Initialize from URL param or props
     const [selectedProjectId, setSelectedProjectId] = useState<string>(
         searchParams.get('project_id') || (initialProjectId ? initialProjectId.toString() : '')
     );
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     
     const [draggedTask, setDraggedTask] = useState<Task | null>(null);
     const [draggedFrom, setDraggedFrom] = useState<string | null>(null);
@@ -156,12 +158,12 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                             label=""
                         />
                     </div>
-                    <Link
-                        to="/tasks/create"
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
                     >
                         + New Task
-                    </Link>
+                    </button>
                 </div>
             </div>
 
@@ -246,6 +248,18 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                 );
             })}
             </div>
+
+            <Modal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                title="Create New Task"
+            >
+                <TaskForm
+                    initialProjectId={selectedProjectId ? parseInt(selectedProjectId) : undefined}
+                    onSuccess={() => setIsCreateModalOpen(false)}
+                    onCancel={() => setIsCreateModalOpen(false)}
+                />
+            </Modal>
         </div>
     );
 }
