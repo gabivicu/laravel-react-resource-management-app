@@ -91,7 +91,7 @@ describe('ProjectList', () => {
         renderComponent();
 
         await waitFor(() => {
-            expect(screen.getByText('No projects found.')).toBeInTheDocument();
+            expect(screen.getByText('No projects found matching your criteria.')).toBeInTheDocument();
         });
     });
 });
