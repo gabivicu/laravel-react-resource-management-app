@@ -10,6 +10,13 @@ class ResourceAllocationObserver
     use ClearsOrganizationCache;
 
     /**
+     * Handle events after all transactions are committed.
+     *
+     * @var bool
+     */
+    public $afterCommit = true;
+
+    /**
      * Handle the ResourceAllocation "created" event.
      */
     public function created(ResourceAllocation $resourceAllocation): void
