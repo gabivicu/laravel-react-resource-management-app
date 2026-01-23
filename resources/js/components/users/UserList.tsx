@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { userService } from '@/services/users';
+import { userService, UserListResponse } from '@/services/users';
 import { roleService } from '@/services/roles';
 import { useState, useEffect } from 'react';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
@@ -14,11 +14,11 @@ export default function UserList() {
         hasNextPage,
         isFetchingNextPage,
         isLoading,
-    } = useInfiniteQuery({
+    } = useInfiniteQuery<UserListResponse>({
         queryKey: ['users', searchFilter],
-        queryFn: ({ pageParam = 1 }) => userService.getUsers(
+        queryFn: ({ pageParam }) => userService.getUsers(
             searchFilter ? { search: searchFilter } : {},
-            pageParam
+            pageParam as number
         ),
         initialPageParam: 1,
         getNextPageParam: (lastPage) => {

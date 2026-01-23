@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { taskService } from '@/services/tasks';
-import { useState } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { taskService, TaskListResponse } from '@/services/tasks';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 
 const statusColors = {
     todo: 'bg-gray-100 text-gray-800',
@@ -22,15 +23,41 @@ export default function TaskList() {
     const [priorityFilter, setPriorityFilter] = useState<string>('');
     const queryClient = useQueryClient();
 
-    const { data, isLoading, error } = useQuery({
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+        isError,
+    } = useInfiniteQuery<TaskListResponse>({
         queryKey: ['tasks', statusFilter, priorityFilter],
-        queryFn: () => taskService.getTasks(
+        queryFn: ({ pageParam }) => taskService.getTasks(
             {
                 ...(statusFilter ? { status: statusFilter as any } : {}),
                 ...(priorityFilter ? { priority: priorityFilter as any } : {}),
-            }
+            },
+            pageParam as number
         ),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => {
+            const { current_page, last_page } = lastPage.pagination || {};
+            if (current_page && last_page && current_page < last_page) {
+                return current_page + 1;
+            }
+            return undefined;
+        },
     });
+
+    const [loadMoreRef, isLoadMoreVisible] = useIntersectionObserver({
+        rootMargin: '200px',
+    });
+
+    useEffect(() => {
+        if (isLoadMoreVisible && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [isLoadMoreVisible, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const deleteMutation = useMutation({
         mutationFn: taskService.deleteTask,
@@ -47,7 +74,7 @@ export default function TaskList() {
         );
     }
 
-    if (error) {
+    if (isError) {
         return (
             <div className="p-4 bg-red-50 text-red-600 rounded">
                 Error loading tasks. Please try again.
@@ -55,7 +82,7 @@ export default function TaskList() {
         );
     }
 
-    const tasks = data?.data || [];
+    const tasks = data?.pages.flatMap((page) => page.data) || [];
 
     return (
         <div className="w-full">
@@ -115,81 +142,94 @@ export default function TaskList() {
                     </Link>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {tasks.map((task) => (
-                                <tr key={task.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4">
-                                        <div className="font-medium text-gray-900">{task.title}</div>
-                                        {task.description && (
-                                            <div className="text-sm text-gray-500 line-clamp-1">
-                                                {task.description}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                        {task.project?.name || 'N/A'}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`px-2 py-1 text-xs rounded ${
-                                                statusColors[task.status]
-                                            }`}
-                                        >
-                                            {task.status.replace('_', ' ')}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`px-2 py-1 text-xs rounded ${
-                                                priorityColors[task.priority]
-                                            }`}
-                                        >
-                                            {task.priority}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                        {task.due_date
-                                            ? new Date(task.due_date).toLocaleDateString()
-                                            : '-'}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <div className="flex gap-2">
-                                            <Link
-                                                to={`/tasks/${task.id}/edit`}
-                                                className="text-blue-600 hover:text-blue-800"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() => {
-                                                    if (confirm('Are you sure you want to delete this task?')) {
-                                                        deleteMutation.mutate(task.id);
-                                                    }
-                                                }}
-                                                className="text-red-600 hover:text-red-800"
-                                                disabled={deleteMutation.isPending}
-                                            >
-                                                {deleteMutation.isPending ? '...' : 'Delete'}
-                                            </button>
-                                        </div>
-                                    </td>
+                <>
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <table className="w-full">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {tasks.map((task) => (
+                                    <tr key={task.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4">
+                                            <div className="font-medium text-gray-900">{task.title}</div>
+                                            {task.description && (
+                                                <div className="text-sm text-gray-500 line-clamp-1">
+                                                    {task.description}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            {task.project?.name || 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span
+                                                className={`px-2 py-1 text-xs rounded ${
+                                                    statusColors[task.status]
+                                                }`}
+                                            >
+                                                {task.status.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span
+                                                className={`px-2 py-1 text-xs rounded ${
+                                                    priorityColors[task.priority]
+                                                }`}
+                                            >
+                                                {task.priority}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            {task.due_date
+                                                ? new Date(task.due_date).toLocaleDateString()
+                                                : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            <div className="flex gap-2">
+                                                <Link
+                                                    to={`/tasks/${task.id}/edit`}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                >
+                                                    Edit
+                                                </Link>
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm('Are you sure you want to delete this task?')) {
+                                                            deleteMutation.mutate(task.id);
+                                                        }
+                                                    }}
+                                                    className="text-red-600 hover:text-red-800"
+                                                    disabled={deleteMutation.isPending}
+                                                >
+                                                    {deleteMutation.isPending ? '...' : 'Delete'}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Infinite Scroll Sensor */}
+                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                        {isFetchingNextPage ? (
+                            <div className="text-gray-500 animate-pulse">Loading more tasks...</div>
+                        ) : hasNextPage ? (
+                            <div className="text-gray-400 text-sm">Scroll to load more</div>
+                        ) : (
+                            tasks.length > 0 && <div className="text-gray-400 text-sm">No more tasks to load</div>
+                        )}
+                    </div>
+                </>
             )}
         </div>
     );

@@ -39,7 +39,7 @@ describe('projectService', () => {
 
         expect(result.data).toEqual(mockProjects);
         expect(api.get).toHaveBeenCalledWith('/projects', {
-            params: { per_page: 15 },
+            params: { page: 1, per_page: 15 },
         });
     });
 

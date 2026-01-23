@@ -29,16 +29,26 @@ export const taskService = {
     /**
      * Get paginated list of tasks
      */
-    async getTasks(filters: TaskFilters = {}, perPage: number = 15): Promise<TaskListResponse> {
+    async getTasks(filters: TaskFilters = {}, page: number = 1, perPage: number = 15): Promise<TaskListResponse> {
         const response = await api.get<ApiResponse<Task[]>>('/tasks', {
             params: {
                 ...filters,
+                page,
                 per_page: perPage,
             },
         });
+        
+        const responseData = response.data;
+        const pagination = responseData.meta || responseData.pagination || {
+            current_page: responseData.current_page,
+            last_page: responseData.last_page,
+            per_page: responseData.per_page,
+            total: responseData.total
+        };
+
         return {
-            data: response.data.data || [],
-            pagination: response.data.pagination,
+            data: responseData.data || [],
+            pagination: pagination as any,
         };
     },
 

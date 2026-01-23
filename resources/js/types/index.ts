@@ -105,10 +105,30 @@ export interface ApiResponse<T = any> {
     message: string;
     data?: T;
     errors?: Record<string, string[]>;
+    // Laravel API Resource pagination
+    meta?: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        [key: string]: any;
+    };
+    links?: {
+        first: string;
+        last: string;
+        prev: string | null;
+        next: string | null;
+    };
+    // Standard pagination (legacy or manual)
     pagination?: {
         current_page: number;
         last_page: number;
         per_page: number;
         total: number;
     };
+    // Direct pagination properties (sometimes returned at root)
+    current_page?: number;
+    last_page?: number;
+    per_page?: number;
+    total?: number;
 }
