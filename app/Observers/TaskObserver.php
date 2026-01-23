@@ -10,6 +10,13 @@ class TaskObserver
     use ClearsOrganizationCache;
 
     /**
+     * Handle events after all transactions are committed.
+     *
+     * @var bool
+     */
+    public $afterCommit = true;
+
+    /**
      * Handle the Task "created" event.
      */
     public function created(Task $task): void

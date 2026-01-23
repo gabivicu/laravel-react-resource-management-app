@@ -10,6 +10,13 @@ class ProjectObserver
     use ClearsOrganizationCache;
 
     /**
+     * Handle events after all transactions are committed.
+     *
+     * @var bool
+     */
+    public $afterCommit = true;
+
+    /**
      * Handle the Project "created" event.
      */
     public function created(Project $project): void

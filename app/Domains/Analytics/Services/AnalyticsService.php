@@ -12,16 +12,11 @@ use Illuminate\Support\Facades\DB;
 class AnalyticsService
 {
     /**
-     * Cache TTL in seconds (10 minutes)
-     */
-    protected const CACHE_TTL = 600;
-
-    /**
      * Get dashboard statistics
      */
     public function getDashboardStats(int $organizationId): array
     {
-        return Cache::remember("org_{$organizationId}_dashboard_stats", self::CACHE_TTL, function () use ($organizationId) {
+        return Cache::remember("org_{$organizationId}_dashboard_stats", config('analytics.cache.ttl', 600), function () use ($organizationId) {
             $projectsCount = Project::where('organization_id', $organizationId)->count();
             $tasksCount = Task::where('organization_id', $organizationId)->count();
             $usersCount = User::whereHas('organizations', function ($q) use ($organizationId) {
@@ -45,7 +40,7 @@ class AnalyticsService
      */
     public function getProjectStats(int $organizationId): array
     {
-        return Cache::remember("org_{$organizationId}_project_stats", self::CACHE_TTL, function () use ($organizationId) {
+        return Cache::remember("org_{$organizationId}_project_stats", config('analytics.cache.ttl', 600), function () use ($organizationId) {
             $totalProjects = Project::where('organization_id', $organizationId)->count();
 
             $statusBreakdown = Project::where('organization_id', $organizationId)
@@ -71,7 +66,7 @@ class AnalyticsService
      */
     public function getTaskStats(int $organizationId): array
     {
-        return Cache::remember("org_{$organizationId}_task_stats", self::CACHE_TTL, function () use ($organizationId) {
+        return Cache::remember("org_{$organizationId}_task_stats", config('analytics.cache.ttl', 600), function () use ($organizationId) {
             $totalTasks = Task::where('organization_id', $organizationId)->count();
 
             $statusBreakdown = Task::where('organization_id', $organizationId)
@@ -112,7 +107,7 @@ class AnalyticsService
      */
     public function getResourceStats(int $organizationId): array
     {
-        return Cache::remember("org_{$organizationId}_resource_stats", self::CACHE_TTL, function () use ($organizationId) {
+        return Cache::remember("org_{$organizationId}_resource_stats", config('analytics.cache.ttl', 600), function () use ($organizationId) {
             $allocations = ResourceAllocation::where('organization_id', $organizationId)
                 ->active()
                 ->with(['user', 'project'])
@@ -143,7 +138,7 @@ class AnalyticsService
      */
     public function getTaskCompletionTrend(int $organizationId, int $days = 30): array
     {
-        return Cache::remember("org_{$organizationId}_task_trend_{$days}", self::CACHE_TTL, function () use ($organizationId, $days) {
+        return Cache::remember("org_{$organizationId}_task_trend_{$days}", config('analytics.cache.ttl', 600), function () use ($organizationId, $days) {
             $startDate = now()->subDays($days);
 
             $completedTasks = Task::where('organization_id', $organizationId)
