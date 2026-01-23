@@ -1,9 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { projectService } from '@/services/projects';
-import { useState } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { projectService, ProjectListResponse } from '@/services/projects';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Modal from '@/components/ui/Modal';
 import ProjectForm from './ProjectForm';
+import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 
 const statusColors = {
     planning: 'bg-gray-100 text-gray-800',
@@ -21,12 +22,38 @@ export default function ProjectList() {
     
     const queryClient = useQueryClient();
 
-    const { data, isLoading, error } = useQuery({
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+        isError,
+    } = useInfiniteQuery<ProjectListResponse>({
         queryKey: ['projects', statusFilter],
-        queryFn: () => projectService.getProjects(
-            statusFilter ? { status: statusFilter as any } : {}
+        queryFn: ({ pageParam }) => projectService.getProjects(
+            statusFilter ? { status: statusFilter as any } : {},
+            pageParam as number
         ),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => {
+            const { current_page, last_page } = lastPage.pagination || {};
+            if (current_page && last_page && current_page < last_page) {
+                return current_page + 1;
+            }
+            return undefined;
+        },
     });
+
+    const [loadMoreRef, isLoadMoreVisible] = useIntersectionObserver({
+        rootMargin: '200px', // Start loading 200px before reaching the bottom
+    });
+
+    useEffect(() => {
+        if (isLoadMoreVisible && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [isLoadMoreVisible, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const deleteMutation = useMutation({
         mutationFn: projectService.deleteProject,
@@ -57,7 +84,7 @@ export default function ProjectList() {
         );
     }
 
-    if (error) {
+    if (isError) {
         return (
             <div className="p-4 bg-red-50 text-red-600 rounded">
                 Error loading projects. Please try again.
@@ -65,7 +92,7 @@ export default function ProjectList() {
         );
     }
 
-    const projects = data?.data || [];
+    const projects = data?.pages.flatMap((page) => page.data) || [];
 
     return (
         <div className="w-full">
@@ -107,72 +134,85 @@ export default function ProjectList() {
                     </button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {projects.map((project) => (
-                        <div
-                            key={project.id}
-                            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-                        >
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-lg font-semibold">{project.name}</h3>
-                                <span
-                                    className={`px-2 py-1 text-xs rounded ${
-                                        statusColors[project.status]
-                                    }`}
-                                >
-                                    {project.status}
-                                </span>
-                            </div>
-
-                            {project.description && (
-                                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                    {project.description}
-                                </p>
-                            )}
-
-                            <div className="flex gap-2 text-sm text-gray-500 mb-4">
-                                {project.start_date && (
-                                    <span>Start: {new Date(project.start_date).toLocaleDateString()}</span>
-                                )}
-                                {project.end_date && (
-                                    <span>End: {new Date(project.end_date).toLocaleDateString()}</span>
-                                )}
-                            </div>
-
-                            {project.budget && (
-                                <div className="text-sm font-medium mb-4">
-                                    Budget: ${project.budget.toLocaleString()}
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {projects.map((project) => (
+                            <div
+                                key={project.id}
+                                className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <h3 className="text-lg font-semibold">{project.name}</h3>
+                                    <span
+                                        className={`px-2 py-1 text-xs rounded ${
+                                            statusColors[project.status]
+                                        }`}
+                                    >
+                                        {project.status}
+                                    </span>
                                 </div>
-                            )}
 
-                            <div className="flex gap-2">
-                                <Link
-                                    to={`/projects/${project.id}`}
-                                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded text-center hover:bg-blue-100 transition-colors"
-                                >
-                                    View
-                                </Link>
-                                <button
-                                    onClick={() => openEditModal(project.id)}
-                                    className="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded text-center hover:bg-gray-100 transition-colors"
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (confirm('Are you sure you want to delete this project?')) {
-                                            deleteMutation.mutate(project.id);
-                                        }
-                                    }}
-                                    className="px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
-                                    disabled={deleteMutation.isPending}
-                                >
-                                    {deleteMutation.isPending ? '...' : 'Delete'}
-                                </button>
+                                {project.description && (
+                                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                        {project.description}
+                                    </p>
+                                )}
+
+                                <div className="flex gap-2 text-sm text-gray-500 mb-4">
+                                    {project.start_date && (
+                                        <span>Start: {new Date(project.start_date).toLocaleDateString()}</span>
+                                    )}
+                                    {project.end_date && (
+                                        <span>End: {new Date(project.end_date).toLocaleDateString()}</span>
+                                    )}
+                                </div>
+
+                                {project.budget && (
+                                    <div className="text-sm font-medium mb-4">
+                                        Budget: ${project.budget.toLocaleString()}
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2">
+                                    <Link
+                                        to={`/projects/${project.id}`}
+                                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded text-center hover:bg-blue-100 transition-colors"
+                                    >
+                                        View
+                                    </Link>
+                                    <button
+                                        onClick={() => openEditModal(project.id)}
+                                        className="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded text-center hover:bg-gray-100 transition-colors"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('Are you sure you want to delete this project?')) {
+                                                deleteMutation.mutate(project.id);
+                                            }
+                                        }}
+                                        className="px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                                        disabled={deleteMutation.isPending}
+                                    >
+                                        {deleteMutation.isPending ? '...' : 'Delete'}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                    
+                    {/* Infinite Scroll Sensor */}
+                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                        {isFetchingNextPage ? (
+                            <div className="text-gray-500 animate-pulse">Loading more projects...</div>
+                        ) : hasNextPage ? (
+                            <div className="text-gray-400 text-sm">Scroll to load more</div>
+                        ) : (
+                            projects.length > 0 && <div className="text-gray-400 text-sm">No more projects to load</div>
+                        )}
+                    </div>
+                </>
             )}
 
             {/* Create Project Modal */}

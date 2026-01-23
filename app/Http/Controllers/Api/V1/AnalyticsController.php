@@ -11,14 +11,26 @@ class AnalyticsController extends BaseController
         protected AnalyticsService $analyticsService
     ) {}
 
+    protected function getTargetOrganizationId(Request $request): ?int
+    {
+        $user = $request->user();
+
+        // If user is Super Admin, return null to indicate global scope
+        if ($user->isSuperAdmin()) {
+            return null;
+        }
+
+        return $user->current_organization_id;
+    }
+
     /**
      * Get dashboard statistics
      */
     public function dashboard(Request $request)
     {
-        $organizationId = $request->user()->current_organization_id;
+        $organizationId = $this->getTargetOrganizationId($request);
 
-        if (! $organizationId) {
+        if (! $organizationId && ! $request->user()->isSuperAdmin()) {
             return $this->error('No organization selected', 400);
         }
 
@@ -32,9 +44,9 @@ class AnalyticsController extends BaseController
      */
     public function projects(Request $request)
     {
-        $organizationId = $request->user()->current_organization_id;
+        $organizationId = $this->getTargetOrganizationId($request);
 
-        if (! $organizationId) {
+        if (! $organizationId && ! $request->user()->isSuperAdmin()) {
             return $this->error('No organization selected', 400);
         }
 
@@ -48,9 +60,9 @@ class AnalyticsController extends BaseController
      */
     public function tasks(Request $request)
     {
-        $organizationId = $request->user()->current_organization_id;
+        $organizationId = $this->getTargetOrganizationId($request);
 
-        if (! $organizationId) {
+        if (! $organizationId && ! $request->user()->isSuperAdmin()) {
             return $this->error('No organization selected', 400);
         }
 
@@ -64,9 +76,9 @@ class AnalyticsController extends BaseController
      */
     public function resources(Request $request)
     {
-        $organizationId = $request->user()->current_organization_id;
+        $organizationId = $this->getTargetOrganizationId($request);
 
-        if (! $organizationId) {
+        if (! $organizationId && ! $request->user()->isSuperAdmin()) {
             return $this->error('No organization selected', 400);
         }
 
@@ -80,9 +92,9 @@ class AnalyticsController extends BaseController
      */
     public function taskCompletionTrend(Request $request)
     {
-        $organizationId = $request->user()->current_organization_id;
+        $organizationId = $this->getTargetOrganizationId($request);
 
-        if (! $organizationId) {
+        if (! $organizationId && ! $request->user()->isSuperAdmin()) {
             return $this->error('No organization selected', 400);
         }
 

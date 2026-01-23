@@ -21,6 +21,11 @@ trait HasTenantScope
     {
         // Apply global scope for all queries
         static::addGlobalScope('tenant', function (Builder $builder) {
+            // Skip tenant scope if user is Super Admin
+            if (Auth::check() && method_exists(Auth::user(), 'isSuperAdmin') && Auth::user()->isSuperAdmin()) {
+                return;
+            }
+
             $tenantId = static::getCurrentTenantId();
 
             if ($tenantId) {

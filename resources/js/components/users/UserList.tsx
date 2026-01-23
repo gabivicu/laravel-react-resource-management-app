@@ -1,23 +1,49 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userService } from '@/services/users';
+import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { userService, UserListResponse } from '@/services/users';
 import { roleService } from '@/services/roles';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 
 export default function UserList() {
     const [searchFilter, setSearchFilter] = useState<string>('');
     const queryClient = useQueryClient();
 
-    const { data, isLoading } = useQuery({
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+    } = useInfiniteQuery<UserListResponse>({
         queryKey: ['users', searchFilter],
-        queryFn: () => userService.getUsers(
-            searchFilter ? { search: searchFilter } : {}
+        queryFn: ({ pageParam }) => userService.getUsers(
+            searchFilter ? { search: searchFilter } : {},
+            pageParam as number
         ),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => {
+            const { current_page, last_page } = lastPage.pagination || {};
+            if (current_page && last_page && current_page < last_page) {
+                return current_page + 1;
+            }
+            return undefined;
+        },
     });
 
     const { data: rolesData } = useQuery({
         queryKey: ['roles'],
         queryFn: () => roleService.getRoles(),
     });
+
+    const [loadMoreRef, isLoadMoreVisible] = useIntersectionObserver({
+        rootMargin: '200px',
+    });
+
+    useEffect(() => {
+        if (isLoadMoreVisible && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [isLoadMoreVisible, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const assignRoleMutation = useMutation({
         mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) =>
@@ -42,7 +68,7 @@ export default function UserList() {
         );
     }
 
-    const users = data?.data || [];
+    const users = data?.pages.flatMap((page) => page.data) || [];
     const roles = rolesData || [];
 
     return (
@@ -66,52 +92,68 @@ export default function UserList() {
                     <p>No users found.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {users.map((user) => (
-                                <tr key={user.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
-                                    <td className="px-6 py-4">
-                                        <select
-                                            className="px-2 py-1 border rounded text-sm"
-                                            onChange={(e) => {
-                                                const roleId = parseInt(e.target.value);
-                                                if (roleId) {
-                                                    assignRoleMutation.mutate({ userId: user.id, roleId });
-                                                } else {
-                                                    removeRoleMutation.mutate(user.id);
-                                                }
-                                            }}
-                                            defaultValue=""
-                                        >
-                                            <option value="">No Role</option>
-                                            {roles.map((role) => (
-                                                <option key={role.id} value={role.id}>
-                                                    {role.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <button className="text-blue-600 hover:text-blue-800">
-                                            Edit
-                                        </button>
-                                    </td>
+                <>
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <table className="w-full">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {users.map((user) => (
+                                    <tr key={user.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
+                                        <td className="px-6 py-4">
+                                            <select
+                                                className="px-2 py-1 border rounded text-sm"
+                                                onChange={(e) => {
+                                                    const roleId = parseInt(e.target.value);
+                                                    if (roleId) {
+                                                        assignRoleMutation.mutate({ userId: user.id, roleId });
+                                                    } else {
+                                                        removeRoleMutation.mutate(user.id);
+                                                    }
+                                                }}
+                                                // Assuming we can get user's role somehow, but User object here might not have role_id directly 
+                                                // depending on API Resource. 
+                                                // The original code didn't set value={...} so it's uncontrolled or defaults to "No Role" visually.
+                                                defaultValue="" 
+                                            >
+                                                <option value="">No Role</option>
+                                                {roles.map((role) => (
+                                                    <option key={role.id} value={role.id}>
+                                                        {role.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            <button className="text-blue-600 hover:text-blue-800">
+                                                Edit
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Infinite Scroll Sensor */}
+                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                        {isFetchingNextPage ? (
+                            <div className="text-gray-500 animate-pulse">Loading more users...</div>
+                        ) : hasNextPage ? (
+                            <div className="text-gray-400 text-sm">Scroll to load more</div>
+                        ) : (
+                            users.length > 0 && <div className="text-gray-400 text-sm">No more users to load</div>
+                        )}
+                    </div>
+                </>
             )}
         </div>
     );

@@ -36,7 +36,7 @@ describe('taskService', () => {
 
         expect(result.data).toEqual(mockTasks);
         expect(api.get).toHaveBeenCalledWith('/tasks', {
-            params: { per_page: 15 },
+            params: { page: 1, per_page: 15 },
         });
     });
 
