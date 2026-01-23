@@ -1,9 +1,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, ProjectListResponse } from '@/services/projects';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import Modal from '@/components/ui/Modal';
-import ProjectForm from './ProjectForm';
+import ProjectDetailsModal from './ProjectDetailsModal';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 
 const statusColors = {
@@ -17,8 +16,10 @@ const statusColors = {
 export default function ProjectList() {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
+    const [viewingProjectId, setViewingProjectId] = useState<number | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     
     const queryClient = useQueryClient();
 
@@ -67,12 +68,19 @@ export default function ProjectList() {
         setIsEditModalOpen(true);
     };
 
+    const openViewModal = (projectId: number) => {
+        setViewingProjectId(projectId);
+        setIsViewModalOpen(true);
+    };
+
     const closeModals = () => {
         setIsCreateModalOpen(false);
         setIsEditModalOpen(false);
+        setIsViewModalOpen(false);
         // Delay clearing the editingProjectId to allow the exit animation to complete
         setTimeout(() => {
             setEditingProjectId(null);
+            setViewingProjectId(null);
         }, 300);
     };
 
@@ -174,12 +182,12 @@ export default function ProjectList() {
                                 )}
 
                                 <div className="flex gap-2">
-                                    <Link
-                                        to={`/projects/${project.id}`}
+                                    <button
+                                        onClick={() => openViewModal(project.id)}
                                         className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded text-center hover:bg-blue-100 transition-colors"
                                     >
                                         View
-                                    </Link>
+                                    </button>
                                     <button
                                         onClick={() => openEditModal(project.id)}
                                         className="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded text-center hover:bg-gray-100 transition-colors"
@@ -241,6 +249,13 @@ export default function ProjectList() {
                     />
                 )}
             </Modal>
+
+            {/* View Project Modal */}
+            <ProjectDetailsModal
+                projectId={viewingProjectId || 0}
+                isOpen={isViewModalOpen}
+                onClose={closeModals}
+            />
         </div>
     );
 }

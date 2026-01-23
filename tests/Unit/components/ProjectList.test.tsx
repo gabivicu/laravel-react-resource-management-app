@@ -8,6 +8,15 @@ import type { Project } from '@/types';
 
 vi.mock('@/services/projects');
 
+// Mock child components to isolate ProjectList
+vi.mock('@/components/projects/ProjectDetailsModal', () => ({
+    default: () => <div data-testid="project-details-modal">Mock Details Modal</div>
+}));
+
+vi.mock('@/components/projects/ProjectForm', () => ({
+    default: () => <div data-testid="project-form">Mock Form</div>
+}));
+
 describe('ProjectList', () => {
     let queryClient: QueryClient;
 
@@ -62,7 +71,8 @@ describe('ProjectList', () => {
 
         vi.mocked(projectService.getProjects).mockResolvedValue({
             data: mockProjects,
-        });
+            pagination: { current_page: 1, last_page: 1, per_page: 15, total: 2 }
+        } as any);
 
         renderComponent();
 
@@ -75,7 +85,8 @@ describe('ProjectList', () => {
     it('should display empty state when no projects', async () => {
         vi.mocked(projectService.getProjects).mockResolvedValue({
             data: [],
-        });
+            pagination: { current_page: 1, last_page: 1, per_page: 15, total: 0 }
+        } as any);
 
         renderComponent();
 
