@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domains\Project\Services\ProjectService;
 use App\Http\Requests\Project\StoreProjectRequest;
 use App\Http\Requests\Project\UpdateProjectRequest;
+use App\Http\Resources\ProjectResource;
 use Illuminate\Http\Request;
 
 class ProjectController extends BaseController
@@ -25,14 +26,19 @@ class ProjectController extends BaseController
 
         $projects = $this->projectService->getPaginated($filters, $perPage);
 
-        return $this->success($projects->items(), 'Projects retrieved successfully', 200, [
-            'pagination' => [
-                'current_page' => $projects->currentPage(),
-                'last_page' => $projects->lastPage(),
-                'per_page' => $projects->perPage(),
-                'total' => $projects->total(),
-            ],
-        ]);
+        return $this->success(
+            ProjectResource::collection($projects->items())->resolve(),
+            'Projects retrieved successfully',
+            200,
+            [
+                'pagination' => [
+                    'current_page' => $projects->currentPage(),
+                    'last_page' => $projects->lastPage(),
+                    'per_page' => $projects->perPage(),
+                    'total' => $projects->total(),
+                ],
+            ]
+        );
     }
 
     /**
@@ -51,7 +57,7 @@ class ProjectController extends BaseController
 
         $project = $this->projectService->create($data, $organizationId);
 
-        return $this->success($project, 'Project created successfully', 201);
+        return $this->success(new ProjectResource($project), 'Project created successfully', 201);
     }
 
     /**
@@ -67,7 +73,7 @@ class ProjectController extends BaseController
 
         $this->authorize('view', $project);
 
-        return $this->success($project, 'Project retrieved successfully');
+        return $this->success(new ProjectResource($project), 'Project retrieved successfully');
     }
 
     /**
@@ -85,7 +91,7 @@ class ProjectController extends BaseController
 
         $project = $this->projectService->update($id, $request->validated());
 
-        return $this->success($project, 'Project updated successfully');
+        return $this->success(new ProjectResource($project), 'Project updated successfully');
     }
 
     /**
