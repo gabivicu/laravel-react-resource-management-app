@@ -7,6 +7,7 @@ use App\Domains\Project\Models\Project;
 use App\Domains\Task\Models\Task;
 use App\Domains\User\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class LoadTestSeeder extends Seeder
@@ -112,6 +113,12 @@ class LoadTestSeeder extends Seeder
         if (! empty($tasks)) {
             Task::insert($tasks);
         }
+
+        // Clear cache for this organization to reflect new data immediately
+        Cache::forget("org_{$org->id}_dashboard_stats");
+        Cache::forget("org_{$org->id}_project_stats");
+        Cache::forget("org_{$org->id}_task_stats");
+        Cache::forget("org_{$org->id}_resource_stats");
 
         $duration = round(microtime(true) - $startTime, 2);
         $this->command->info("Load Test Seeding Completed in {$duration} seconds!");
