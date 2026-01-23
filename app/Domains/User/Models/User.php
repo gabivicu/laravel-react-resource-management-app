@@ -24,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'current_organization_id', // Currently selected organization by the user
+        'is_super_admin',
     ];
 
     protected $hidden = [
@@ -36,7 +37,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if user is a super admin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_super_admin === true;
     }
 
     /**
@@ -83,6 +93,11 @@ class User extends Authenticatable
      */
     public function hasPermissionInOrganization(string $permission, int $organizationId): bool
     {
+        // Super admin has all permissions
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
         // Get user's roles in the organization
         $roles = $this->rolesInOrganization($organizationId)->get();
 
@@ -109,8 +124,8 @@ class User extends Authenticatable
      */
     public function setCurrentOrganization(int $organizationId): bool
     {
-        // Verify that the user belongs to the organization
-        if (! $this->organizations()->where('organizations.id', $organizationId)->exists()) {
+        // Super admin can switch to any organization
+        if (! $this->isSuperAdmin() && ! $this->organizations()->where('organizations.id', $organizationId)->exists()) {
             return false;
         }
 

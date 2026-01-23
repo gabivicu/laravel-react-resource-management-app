@@ -78,6 +78,11 @@ class TenantScopeMiddleware
 
         $user = Auth::user();
 
+        // Super Admin Bypass
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         // Check if user belongs to the organization
         return $user->organizations()->where('organizations.id', $tenantId)->exists();
     }
