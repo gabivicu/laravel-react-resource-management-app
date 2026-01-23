@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/tasks';
-import { projectService } from '@/services/projects';
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Task } from '@/types';
+import ProjectSelector from '@/components/projects/ProjectSelector';
 
 interface TaskFormData {
     project_id: string;
@@ -17,11 +17,16 @@ interface TaskFormData {
     assignee_ids: number[];
 }
 
-export default function TaskForm() {
-    const { id } = useParams<{ id: string }>();
+interface TaskFormProps {
+    taskId?: number;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+}
+
+export default function TaskForm({ taskId, onSuccess, onCancel }: TaskFormProps) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const isEdit = !!id;
+    const isEdit = !!taskId;
 
     const [formData, setFormData] = useState<TaskFormData>({
         project_id: '',
@@ -37,16 +42,10 @@ export default function TaskForm() {
 
     const [errors, setErrors] = useState<Record<string, string[]>>({});
 
-    // Load projects for dropdown
-    const { data: projectsData } = useQuery({
-        queryKey: ['projects', 'select'],
-        queryFn: () => projectService.getProjects({}, 100),
-    });
-
     // Load task data if editing
     const { data: task, isLoading } = useQuery({
-        queryKey: ['task', id],
-        queryFn: () => taskService.getTask(Number(id!)),
+        queryKey: ['task', taskId],
+        queryFn: () => taskService.getTask(taskId!),
         enabled: isEdit,
     });
 
@@ -70,7 +69,11 @@ export default function TaskForm() {
         mutationFn: taskService.createTask,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
-            navigate('/tasks');
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate('/tasks');
+            }
         },
         onError: (error: any) => {
             if (error.response?.data?.errors) {
@@ -81,11 +84,15 @@ export default function TaskForm() {
 
     const updateMutation = useMutation({
         mutationFn: (data: Partial<Task> & { assignee_ids?: number[] }) =>
-            taskService.updateTask(Number(id!), data),
+            taskService.updateTask(taskId!, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
-            queryClient.invalidateQueries({ queryKey: ['task', id] });
-            navigate('/tasks');
+            queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate('/tasks');
+            }
         },
         onError: (error: any) => {
             if (error.response?.data?.errors) {
@@ -117,44 +124,37 @@ export default function TaskForm() {
         }
     };
 
+    const handleCancel = () => {
+        if (onCancel) {
+            onCancel();
+        } else {
+            navigate('/tasks');
+        }
+    };
+
     if (isEdit && isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-8 text-center text-gray-500">Loading task data...</div>;
     }
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
-    const projects = projectsData?.data || [];
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6">
-                {isEdit ? 'Edit Task' : 'Create New Task'}
-            </h2>
+        <div className={onSuccess ? "" : "max-w-2xl mx-auto"}>
+            {!onSuccess && (
+                <h2 className="text-2xl font-bold mb-6">
+                    {isEdit ? 'Edit Task' : 'Create New Task'}
+                </h2>
+            )}
 
-            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow">
-                {/* Project */}
-                <div className="mb-4">
-                    <label htmlFor="project_id" className="block text-sm font-medium mb-2">Project *</label>
-                    <select
-                        id="project_id"
-                        value={formData.project_id}
-                        onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-lg ${
-                            errors.project_id ? 'border-red-500' : ''
-                        }`}
-                        required
-                        disabled={isEdit}
-                    >
-                        <option value="">Select a project</option>
-                        {projects.map((project) => (
-                            <option key={project.id} value={project.id}>
-                                {project.name}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.project_id && (
-                        <p className="mt-1 text-sm text-red-600">{errors.project_id[0]}</p>
-                    )}
-                </div>
+            <form onSubmit={handleSubmit} className={onSuccess ? "" : "bg-white p-6 rounded-lg shadow"}>
+                {/* Project Selector */}
+                <ProjectSelector
+                    value={formData.project_id}
+                    onChange={(id) => setFormData({ ...formData, project_id: id })}
+                    error={errors.project_id?.[0]}
+                    initialProject={task?.project}
+                    disabled={isEdit} // Optional: Disable project change on edit if desired, usually safer
+                />
 
                 {/* Title */}
                 <div className="mb-4">
@@ -165,7 +165,7 @@ export default function TaskForm() {
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         className={`w-full px-3 py-2 border rounded-lg ${
-                            errors.title ? 'border-red-500' : ''
+                            errors.title ? 'border-red-500' : 'border-gray-300'
                         }`}
                         required
                     />
@@ -182,7 +182,7 @@ export default function TaskForm() {
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         rows={4}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     />
                 </div>
 
@@ -194,7 +194,7 @@ export default function TaskForm() {
                             id="status"
                             value={formData.status}
                             onChange={(e) => setFormData({ ...formData, status: e.target.value as Task['status'] })}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         >
                             <option value="todo">To Do</option>
                             <option value="in_progress">In Progress</option>
@@ -208,7 +208,7 @@ export default function TaskForm() {
                             id="priority"
                             value={formData.priority}
                             onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task['priority'] })}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         >
                             <option value="low">Low</option>
                             <option value="medium">Medium</option>
@@ -226,7 +226,7 @@ export default function TaskForm() {
                         type="date"
                         value={formData.due_date}
                         onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     />
                 </div>
 
@@ -241,7 +241,7 @@ export default function TaskForm() {
                             min="0"
                             value={formData.estimated_hours}
                             onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         />
                     </div>
                     <div>
@@ -253,7 +253,7 @@ export default function TaskForm() {
                             min="0"
                             value={formData.actual_hours}
                             onChange={(e) => setFormData({ ...formData, actual_hours: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         />
                     </div>
                 </div>
@@ -269,8 +269,8 @@ export default function TaskForm() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => navigate('/tasks')}
-                        className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                        onClick={handleCancel}
+                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
                         Cancel
                     </button>

@@ -8,6 +8,18 @@ use App\Domains\User\Models\User;
 class ProjectPolicy
 {
     /**
+     * Perform pre-authorization checks.
+     */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return null;
+    }
+
+    /**
      * Determine if the user can view any projects.
      */
     public function viewAny(User $user): bool

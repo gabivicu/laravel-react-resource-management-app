@@ -3,6 +3,8 @@ import { taskService, TaskListResponse } from '@/services/tasks';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
+import Modal from '@/components/ui/Modal';
+import TaskForm from './TaskForm';
 
 const statusColors = {
     todo: 'bg-gray-100 text-gray-800',
@@ -21,6 +23,9 @@ const priorityColors = {
 export default function TaskList() {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [priorityFilter, setPriorityFilter] = useState<string>('');
+    const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const queryClient = useQueryClient();
 
     const {
@@ -66,6 +71,17 @@ export default function TaskList() {
         },
     });
 
+    const openEditModal = (taskId: number) => {
+        setEditingTaskId(taskId);
+        setIsEditModalOpen(true);
+    };
+
+    const closeModals = () => {
+        setIsCreateModalOpen(false);
+        setIsEditModalOpen(false);
+        setTimeout(() => setEditingTaskId(null), 300);
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
@@ -95,12 +111,12 @@ export default function TaskList() {
                     >
                         Kanban View
                     </Link>
-                    <Link
-                        to="/tasks/create"
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
                     >
                         + New Task
-                    </Link>
+                    </button>
                 </div>
             </div>
 
@@ -134,12 +150,12 @@ export default function TaskList() {
             {tasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                     <p className="mb-4">No tasks found.</p>
-                    <Link
-                        to="/tasks/create"
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="text-blue-600 hover:text-blue-700"
                     >
                         Create your first task
-                    </Link>
+                    </button>
                 </div>
             ) : (
                 <>
@@ -194,12 +210,12 @@ export default function TaskList() {
                                         </td>
                                         <td className="px-6 py-4 text-sm">
                                             <div className="flex gap-2">
-                                                <Link
-                                                    to={`/tasks/${task.id}/edit`}
+                                                <button
+                                                    onClick={() => openEditModal(task.id)}
                                                     className="text-blue-600 hover:text-blue-800"
                                                 >
                                                     Edit
-                                                </Link>
+                                                </button>
                                                 <button
                                                     onClick={() => {
                                                         if (confirm('Are you sure you want to delete this task?')) {
@@ -231,6 +247,31 @@ export default function TaskList() {
                     </div>
                 </>
             )}
+
+            <Modal
+                isOpen={isCreateModalOpen}
+                onClose={closeModals}
+                title="Create New Task"
+            >
+                <TaskForm
+                    onSuccess={closeModals}
+                    onCancel={closeModals}
+                />
+            </Modal>
+
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={closeModals}
+                title="Edit Task"
+            >
+                {editingTaskId && (
+                    <TaskForm
+                        taskId={editingTaskId}
+                        onSuccess={closeModals}
+                        onCancel={closeModals}
+                    />
+                )}
+            </Modal>
         </div>
     );
 }

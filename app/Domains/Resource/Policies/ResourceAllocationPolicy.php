@@ -8,6 +8,18 @@ use App\Domains\User\Models\User;
 class ResourceAllocationPolicy
 {
     /**
+     * Perform pre-authorization checks.
+     */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return null;
+    }
+
+    /**
      * Determine if the user can view any resource allocations.
      */
     public function viewAny(User $user): bool
