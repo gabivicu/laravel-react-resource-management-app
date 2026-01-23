@@ -7,7 +7,6 @@ use App\Domains\Project\Models\Project;
 use App\Domains\Task\Models\Task;
 use App\Domains\User\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class LoadTestSeeder extends Seeder
@@ -15,13 +14,13 @@ class LoadTestSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Starting Load Test Seeding...');
-        
+
         $startTime = microtime(true);
 
         // 1. Create Organization
         $org = Organization::create([
             'name' => 'MegaCorp Load Test',
-            'slug' => 'megacorp-load-test-' . uniqid(),
+            'slug' => 'megacorp-load-test-'.uniqid(),
             'is_active' => true,
         ]);
 
@@ -33,12 +32,12 @@ class LoadTestSeeder extends Seeder
         $now = now();
 
         $this->command->info('Generating 2000 Users...');
-        
+
         // Chunk users creation to avoid memory issues
         for ($i = 0; $i < 2000; $i++) {
             $users[] = [
                 'name' => "User Load {$i}",
-                'email' => "user_load_{$i}_" . uniqid() . "@megacorp.test",
+                'email' => "user_load_{$i}_".uniqid().'@megacorp.test',
                 'password' => $password,
                 'email_verified_at' => $now,
                 'created_at' => $now,
@@ -49,13 +48,13 @@ class LoadTestSeeder extends Seeder
             if (count($users) >= 500) {
                 User::insert($users);
                 $users = [];
-                $this->command->info("Inserted batch of users... Total so far: " . ($i + 1));
+                $this->command->info('Inserted batch of users... Total so far: '.($i + 1));
             }
         }
-        if (!empty($users)) {
+        if (! empty($users)) {
             User::insert($users);
         }
-        
+
         // 3. Create 500 Projects
         $this->command->info('Generating 500 Projects...');
         $projects = [];
@@ -72,18 +71,18 @@ class LoadTestSeeder extends Seeder
                 'updated_at' => $now,
             ];
         }
-        
+
         foreach (array_chunk($projects, 100) as $chunk) {
             Project::insert($chunk);
         }
-        
+
         $projectIds = Project::where('organization_id', $org->id)->pluck('id')->toArray();
 
         // 4. Create 50,000 Tasks
         $this->command->info('Generating 50,000 Tasks...');
         $tasks = [];
         $taskCount = 0;
-        
+
         foreach ($projectIds as $projectId) {
             // Approx 100 tasks per project
             for ($j = 0; $j < 100; $j++) {
@@ -100,7 +99,7 @@ class LoadTestSeeder extends Seeder
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
-                
+
                 $taskCount++;
 
                 if (count($tasks) >= 1000) {
@@ -110,7 +109,7 @@ class LoadTestSeeder extends Seeder
                 }
             }
         }
-        if (!empty($tasks)) {
+        if (! empty($tasks)) {
             Task::insert($tasks);
         }
 
