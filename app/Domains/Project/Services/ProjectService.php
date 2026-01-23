@@ -4,6 +4,7 @@ namespace App\Domains\Project\Services;
 
 use App\Domains\Project\Models\Project;
 use App\Domains\Project\Repositories\ProjectRepository;
+use App\Jobs\ProcessProjectCreation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -42,7 +43,7 @@ class ProjectService
      */
     public function create(array $data, int $organizationId): Project
     {
-        return DB::transaction(function () use ($data, $organizationId) {
+        $project = DB::transaction(function () use ($data, $organizationId) {
             $project = Project::create([
                 'organization_id' => $organizationId,
                 'name' => $data['name'],
@@ -62,8 +63,13 @@ class ProjectService
                 ]);
             }
 
-            return $project->load(['members', 'tasks']);
+            return $project;
         });
+
+        // Dispatch background job for notifications/processing
+        ProcessProjectCreation::dispatch($project);
+
+        return $project->load(['members', 'tasks']);
     }
 
     /**
