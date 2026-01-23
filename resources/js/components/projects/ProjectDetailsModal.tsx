@@ -3,6 +3,7 @@ import { projectService } from '@/services/projects';
 import { taskService } from '@/services/tasks';
 import Modal from '@/components/ui/Modal';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Project, Task } from '@/types';
 
 interface ProjectDetailsModalProps {
@@ -35,6 +36,7 @@ const priorityColors: Record<Task['priority'], string> = {
 
 export default function ProjectDetailsModal({ projectId, isOpen, onClose }: ProjectDetailsModalProps) {
     const [activeTab, setActiveTab] = useState<'details' | 'tasks' | 'members'>('details');
+    const navigate = useNavigate();
 
     const { data: project, isLoading: isLoadingProject } = useQuery({
         queryKey: ['project', projectId],
@@ -65,15 +67,26 @@ export default function ProjectDetailsModal({ projectId, isOpen, onClose }: Proj
                 <div className="space-y-6">
                     {/* Header Summary */}
                     <div className="flex flex-wrap gap-4 items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status]}`}>
-                            {project.status.toUpperCase().replace('_', ' ')}
-                        </span>
-                        <div className="text-sm text-gray-600">
-                            <span className="font-semibold text-gray-900">Budget:</span> ${project.budget?.toLocaleString() || '0'}
+                        <div className="flex items-center gap-4">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[project.status]}`}>
+                                {project.status.toUpperCase().replace('_', ' ')}
+                            </span>
+                            <div className="text-sm text-gray-600">
+                                <span className="font-semibold text-gray-900">Budget:</span> ${project.budget?.toLocaleString() || '0'}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                                <span className="font-semibold text-gray-900">Timeline:</span> {formatDate(project.start_date)} - {formatDate(project.end_date)}
+                            </div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                            <span className="font-semibold text-gray-900">Timeline:</span> {formatDate(project.start_date)} - {formatDate(project.end_date)}
-                        </div>
+                        <button
+                            onClick={() => navigate(`/tasks/kanban?project_id=${projectId}`)}
+                            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                            </svg>
+                            Kanban Board
+                        </button>
                     </div>
 
                     {/* Tabs */}

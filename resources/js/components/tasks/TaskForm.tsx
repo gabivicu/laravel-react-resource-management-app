@@ -19,17 +19,18 @@ interface TaskFormData {
 
 interface TaskFormProps {
     taskId?: number;
+    initialProjectId?: number;
     onSuccess?: () => void;
     onCancel?: () => void;
 }
 
-export default function TaskForm({ taskId, onSuccess, onCancel }: TaskFormProps) {
+export default function TaskForm({ taskId, initialProjectId, onSuccess, onCancel }: TaskFormProps) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const isEdit = !!taskId;
 
     const [formData, setFormData] = useState<TaskFormData>({
-        project_id: '',
+        project_id: initialProjectId ? initialProjectId.toString() : '',
         title: '',
         description: '',
         status: 'todo',

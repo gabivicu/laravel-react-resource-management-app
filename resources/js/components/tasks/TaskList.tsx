@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 import Modal from '@/components/ui/Modal';
 import TaskForm from './TaskForm';
+import TaskDeleteModal from './TaskDeleteModal';
+import type { Task } from '@/types';
 
 const statusColors = {
     todo: 'bg-gray-100 text-gray-800',
@@ -26,6 +28,11 @@ export default function TaskList() {
     const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    
+    // Delete modal state
+    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
     const queryClient = useQueryClient();
 
     const {
@@ -68,6 +75,8 @@ export default function TaskList() {
         mutationFn: taskService.deleteTask,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            setIsDeleteModalOpen(false);
+            setTaskToDelete(null);
         },
     });
 
@@ -80,6 +89,22 @@ export default function TaskList() {
         setIsCreateModalOpen(false);
         setIsEditModalOpen(false);
         setTimeout(() => setEditingTaskId(null), 300);
+    };
+
+    const openDeleteModal = (task: Task) => {
+        setTaskToDelete(task);
+        setIsDeleteModalOpen(true);
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setTimeout(() => setTaskToDelete(null), 300);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (taskToDelete) {
+            deleteMutation.mutate(taskToDelete.id);
+        }
     };
 
     if (isLoading) {
@@ -217,15 +242,10 @@ export default function TaskList() {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        if (confirm('Are you sure you want to delete this task?')) {
-                                                            deleteMutation.mutate(task.id);
-                                                        }
-                                                    }}
+                                                    onClick={() => openDeleteModal(task)}
                                                     className="text-red-600 hover:text-red-800"
-                                                    disabled={deleteMutation.isPending}
                                                 >
-                                                    {deleteMutation.isPending ? '...' : 'Delete'}
+                                                    Delete
                                                 </button>
                                             </div>
                                         </td>
@@ -272,6 +292,14 @@ export default function TaskList() {
                     />
                 )}
             </Modal>
+
+            <TaskDeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={closeDeleteModal}
+                onConfirm={handleDeleteConfirm}
+                task={taskToDelete}
+                isDeleting={deleteMutation.isPending}
+            />
         </div>
     );
 }
