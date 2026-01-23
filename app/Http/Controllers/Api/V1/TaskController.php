@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domains\Task\Services\TaskService;
 use App\Http\Requests\Task\StoreTaskRequest;
 use App\Http\Requests\Task\UpdateTaskRequest;
+use App\Http\Resources\TaskResource;
 use Illuminate\Http\Request;
 
 class TaskController extends BaseController
@@ -25,14 +26,19 @@ class TaskController extends BaseController
 
         $tasks = $this->taskService->getPaginated($filters, $perPage);
 
-        return $this->success($tasks->items(), 'Tasks retrieved successfully', 200, [
-            'pagination' => [
-                'current_page' => $tasks->currentPage(),
-                'last_page' => $tasks->lastPage(),
-                'per_page' => $tasks->perPage(),
-                'total' => $tasks->total(),
-            ],
-        ]);
+        return $this->success(
+            TaskResource::collection($tasks->items())->resolve(),
+            'Tasks retrieved successfully',
+            200,
+            [
+                'pagination' => [
+                    'current_page' => $tasks->currentPage(),
+                    'last_page' => $tasks->lastPage(),
+                    'per_page' => $tasks->perPage(),
+                    'total' => $tasks->total(),
+                ],
+            ]
+        );
     }
 
     /**
@@ -44,7 +50,13 @@ class TaskController extends BaseController
 
         $tasks = $this->taskService->getGroupedByStatus($projectId);
 
-        return $this->success($tasks, 'Tasks retrieved successfully');
+        // Transform grouped tasks
+        $transformedTasks = [];
+        foreach ($tasks as $status => $statusTasks) {
+            $transformedTasks[$status] = TaskResource::collection($statusTasks)->resolve();
+        }
+
+        return $this->success($transformedTasks, 'Tasks retrieved successfully');
     }
 
     /**
@@ -61,7 +73,7 @@ class TaskController extends BaseController
         $data = $request->validated();
         $task = $this->taskService->create($data, $organizationId);
 
-        return $this->success($task, 'Task created successfully', 201);
+        return $this->success(new TaskResource($task), 'Task created successfully', 201);
     }
 
     /**
@@ -77,7 +89,7 @@ class TaskController extends BaseController
 
         $this->authorize('view', $task);
 
-        return $this->success($task, 'Task retrieved successfully');
+        return $this->success(new TaskResource($task), 'Task retrieved successfully');
     }
 
     /**
@@ -95,7 +107,7 @@ class TaskController extends BaseController
 
         $task = $this->taskService->update($id, $request->validated());
 
-        return $this->success($task, 'Task updated successfully');
+        return $this->success(new TaskResource($task), 'Task updated successfully');
     }
 
     /**
@@ -114,7 +126,12 @@ class TaskController extends BaseController
             $request->input('status')
         );
 
-        return $this->success($task, 'Task order updated successfully');
+        // Here updateOrder returns boolean or updated model?
+        // Let's check TaskService.
+        // Assuming it returns updated model or we refetch it.
+        $updatedTask = $this->taskService->find($id);
+
+        return $this->success(new TaskResource($updatedTask), 'Task order updated successfully');
     }
 
     /**
