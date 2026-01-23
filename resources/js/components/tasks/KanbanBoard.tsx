@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/tasks';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { Task } from '@/types';
 import ProjectSelector from '@/components/projects/ProjectSelector';
 
@@ -25,7 +25,13 @@ interface KanbanBoardProps {
 
 export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     const queryClient = useQueryClient();
-    const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjectId ? initialProjectId.toString() : '');
+    const [searchParams] = useSearchParams();
+    
+    // Initialize from URL param or props
+    const [selectedProjectId, setSelectedProjectId] = useState<string>(
+        searchParams.get('project_id') || (initialProjectId ? initialProjectId.toString() : '')
+    );
+    
     const [draggedTask, setDraggedTask] = useState<Task | null>(null);
     const [draggedFrom, setDraggedFrom] = useState<string | null>(null);
 
@@ -95,8 +101,8 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                     <div className="flex gap-4 items-center w-full md:w-auto">
                         <div className="w-full md:w-64">
                             <ProjectSelector
-                                value={selectedProjectId}
-                                onChange={(id) => setSelectedProjectId(id)}
+                                value={selectedProjectId ? Number(selectedProjectId) : undefined}
+                                onChange={(id) => setSelectedProjectId(id.toString())}
                                 label=""
                             />
                         </div>
@@ -145,8 +151,8 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                 <div className="flex gap-4 items-center w-full md:w-auto">
                     <div className="w-full md:w-64">
                         <ProjectSelector
-                            value={selectedProjectId}
-                            onChange={(id) => setSelectedProjectId(id)}
+                            value={selectedProjectId ? Number(selectedProjectId) : undefined}
+                            onChange={(id) => setSelectedProjectId(id.toString())}
                             label=""
                         />
                     </div>
