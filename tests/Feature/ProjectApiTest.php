@@ -159,4 +159,31 @@ class ProjectApiTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    #[Test]
+    public function it_denies_project_creation_for_developer_role()
+    {
+        // Create a new user with developer role
+        $devUser = User::factory()->create([
+            'current_organization_id' => $this->organization->id,
+        ]);
+
+        $developerRole = \App\Domains\Permission\Models\Role::where('slug', 'developer')->first();
+
+        $this->organization->users()->attach($devUser->id, [
+            'role_id' => $developerRole->id,
+            'joined_at' => now(),
+        ]);
+
+        $token = $devUser->createToken('dev-token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/projects', [
+                'name' => 'Forbidden Project',
+                'description' => 'Should not be created',
+                'status' => 'active',
+            ]);
+
+        $response->assertStatus(403);
+    }
 }
