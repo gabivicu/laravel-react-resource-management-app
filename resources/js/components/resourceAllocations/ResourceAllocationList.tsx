@@ -95,84 +95,156 @@ export default function ResourceAllocationList() {
                     </button>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Allocation</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {allocations.map((allocation) => (
-                                <tr key={allocation.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4">
-                                        <div className="font-medium text-gray-900">
+                <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+                        <table className="w-full">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Allocation</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {allocations.map((allocation) => (
+                                    <tr key={allocation.id} className="hover:bg-gray-50">
+                                        <td className="px-4 lg:px-6 py-4">
+                                            <div className="font-medium text-gray-900">
+                                                {allocation.user?.name || 'N/A'}
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                {allocation.user?.email || ''}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">
+                                            {allocation.project?.name || 'N/A'}
+                                        </td>
+                                        <td className="px-4 lg:px-6 py-4">
+                                            <div className="flex items-center">
+                                                <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                                    <div
+                                                        className="bg-blue-600 h-2 rounded-full"
+                                                        style={{ width: `${allocation.allocation_percentage}%` }}
+                                                    ></div>
+                                                </div>
+                                                <span className="text-sm font-medium">
+                                                    {allocation.allocation_percentage}%
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">
+                                            {allocation.role || '-'}
+                                        </td>
+                                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">
+                                            <div>
+                                                {new Date(allocation.start_date).toLocaleDateString()}
+                                            </div>
+                                            {allocation.end_date && (
+                                                <div className="text-xs text-gray-500">
+                                                    to {new Date(allocation.end_date).toLocaleDateString()}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-4 lg:px-6 py-4 text-sm">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => openEditModal(allocation.id)}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm('Are you sure you want to delete this allocation?')) {
+                                                            deleteMutation.mutate(allocation.id);
+                                                        }
+                                                    }}
+                                                    className="text-red-600 hover:text-red-800"
+                                                    disabled={deleteMutation.isPending}
+                                                >
+                                                    {deleteMutation.isPending ? '...' : 'Delete'}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-4">
+                        {allocations.map((allocation) => (
+                            <div key={allocation.id} className="bg-white rounded-lg shadow p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-gray-900 truncate">
                                             {allocation.user?.name || 'N/A'}
                                         </div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-sm text-gray-500 truncate">
                                             {allocation.user?.email || ''}
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                        {allocation.project?.name || 'N/A'}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center">
-                                            <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                    </div>
+                                    <div className="flex gap-2 ml-2">
+                                        <button
+                                            onClick={() => openEditModal(allocation.id)}
+                                            className="text-blue-600 hover:text-blue-800 text-sm"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (confirm('Are you sure you want to delete this allocation?')) {
+                                                    deleteMutation.mutate(allocation.id);
+                                                }
+                                            }}
+                                            className="text-red-600 hover:text-red-800 text-sm"
+                                            disabled={deleteMutation.isPending}
+                                        >
+                                            {deleteMutation.isPending ? '...' : 'Delete'}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-2 text-sm">
+                                    <div>
+                                        <span className="font-medium text-gray-700">Project: </span>
+                                        <span className="text-gray-600">{allocation.project?.name || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-gray-700">Allocation: </span>
+                                        <div className="flex items-center mt-1">
+                                            <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
                                                 <div
                                                     className="bg-blue-600 h-2 rounded-full"
                                                     style={{ width: `${allocation.allocation_percentage}%` }}
                                                 ></div>
                                             </div>
-                                            <span className="text-sm font-medium">
-                                                {allocation.allocation_percentage}%
-                                            </span>
+                                            <span className="text-sm font-medium">{allocation.allocation_percentage}%</span>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                        {allocation.role || '-'}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                    </div>
+                                    {allocation.role && (
                                         <div>
+                                            <span className="font-medium text-gray-700">Role: </span>
+                                            <span className="text-gray-600">{allocation.role}</span>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <span className="font-medium text-gray-700">Period: </span>
+                                        <span className="text-gray-600">
                                             {new Date(allocation.start_date).toLocaleDateString()}
-                                        </div>
-                                        {allocation.end_date && (
-                                            <div className="text-xs text-gray-500">
-                                                to {new Date(allocation.end_date).toLocaleDateString()}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => openEditModal(allocation.id)}
-                                                className="text-blue-600 hover:text-blue-800"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    if (confirm('Are you sure you want to delete this allocation?')) {
-                                                        deleteMutation.mutate(allocation.id);
-                                                    }
-                                                }}
-                                                className="text-red-600 hover:text-red-800"
-                                                disabled={deleteMutation.isPending}
-                                            >
-                                                {deleteMutation.isPending ? '...' : 'Delete'}
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                            {allocation.end_date && ` - ${new Date(allocation.end_date).toLocaleDateString()}`}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
 
             {/* Create Modal */}

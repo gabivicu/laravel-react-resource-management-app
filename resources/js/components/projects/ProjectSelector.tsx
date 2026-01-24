@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '@/services/projects';
 import useDebounce from '@/hooks/useDebounce';
@@ -61,7 +61,7 @@ export default function ProjectSelector({
         enabled: debouncedSearch.length > 1 && !selectedProject && showSuggestions,
     });
 
-    const suggestions = suggestionsData?.data || [];
+    const suggestions = useMemo(() => suggestionsData?.data || [], [suggestionsData?.data]);
 
     // Handle click outside to close suggestions
     useEffect(() => {

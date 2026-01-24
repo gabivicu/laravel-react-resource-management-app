@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { projectService, ProjectListResponse } from '@/services/projects';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Modal from '@/components/ui/Modal';
 import ProjectForm from './ProjectForm';
 import ProjectDetailsModal from './ProjectDetailsModal';
@@ -40,7 +40,7 @@ export default function ProjectList() {
         enabled: debouncedSearch.length > 1 && showSuggestions,
     });
 
-    const suggestions = suggestionsData?.data || [];
+    const suggestions = useMemo(() => suggestionsData?.data || [], [suggestionsData?.data]);
 
     const {
         data,
