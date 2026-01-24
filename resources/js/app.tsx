@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import App from './components/App';
 import { TenantProvider } from './contexts/TenantContext';
+import './echo';
 
 const queryClient = new QueryClient({
     defaultOptions: {

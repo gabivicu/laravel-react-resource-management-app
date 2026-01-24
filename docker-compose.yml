@@ -67,6 +67,47 @@ services:
       - CACHE_DRIVER=redis
       - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=app-id
+      - REVERB_APP_KEY=app-key
+      - REVERB_APP_SECRET=app-secret
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+
+  # Laravel Reverb (WebSocket Server)
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resource_management_reverb
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - resource_management_network
+    ports:
+      - "${REVERB_PORT:-8080}:8080"
+    depends_on:
+      - app
+      - redis
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-resource_management}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=app-id
+      - REVERB_APP_KEY=app-key
+      - REVERB_APP_SECRET=app-secret
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
 
   # Node.js / Vite for Frontend
   node:
@@ -84,6 +125,10 @@ services:
       - resource_management_network
     environment:
       - VITE_API_URL=${VITE_API_URL:-http://localhost/api/v1}
+      - VITE_REVERB_APP_KEY=app-key
+      - VITE_REVERB_HOST=localhost
+      - VITE_REVERB_PORT=8080
+      - VITE_REVERB_SCHEME=http
 
   # Nginx Web Server
   nginx:
@@ -128,6 +173,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - QUEUE_CONNECTION=redis
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=app-id
+      - REVERB_APP_KEY=app-key
+      - REVERB_APP_SECRET=app-secret
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
 
   # Laravel Scheduler (Cron)
   scheduler:

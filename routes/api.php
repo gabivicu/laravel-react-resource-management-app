@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\ResourceAllocationController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\UserController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 // V1 Routes
 Route::prefix('v1')->group(function () {
