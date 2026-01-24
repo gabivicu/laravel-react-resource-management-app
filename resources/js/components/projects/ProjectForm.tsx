@@ -164,17 +164,10 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
     }
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
+    const isInModal = projectId || onSuccess;
 
-    return (
-        <div className="max-w-2xl mx-auto">
-            {/* Show title only if not in modal (no projectId prop AND no onSuccess callback) */}
-            {!projectId && !onSuccess && (
-                <h2 className="text-2xl font-bold mb-6">
-                    {isEdit ? 'Edit Project' : 'Create New Project'}
-                </h2>
-            )}
-
-            <form onSubmit={handleSubmit} className={projectId || onSuccess ? "" : "bg-white p-6 rounded-lg shadow"}>
+    const formContent = (
+        <form onSubmit={handleSubmit} className={isInModal ? "" : "bg-white p-6 rounded-lg shadow"}>
                 {/* Name */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">Project Name *</label>
@@ -200,16 +193,18 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         rows={4}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        placeholder="Enter project description..."
                     />
                 </div>
 
                 {/* Status */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Status</label>
+                    <label className="block text-sm font-medium mb-2">Status *</label>
                     <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as Project['status'] })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        required
                     >
                         <option value="planning">Planning</option>
                         <option value="active">Active</option>
@@ -273,6 +268,18 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
                     </button>
                 </div>
             </form>
+    );
+
+    if (isInModal) {
+        return formContent;
+    }
+
+    return (
+        <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6">
+                {isEdit ? 'Edit Project' : 'Create New Project'}
+            </h2>
+            {formContent}
         </div>
     );
 }

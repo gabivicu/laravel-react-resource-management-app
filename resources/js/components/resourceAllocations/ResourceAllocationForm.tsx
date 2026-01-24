@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { resourceAllocationService } from '@/services/resourceAllocations';
-import { projectService } from '@/services/projects';
 import { userService } from '@/services/users';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ResourceAllocation } from '@/types';
+import ProjectSelector from '@/components/projects/ProjectSelector';
 
 interface ResourceAllocationFormData {
     project_id: string;
@@ -16,14 +16,27 @@ interface ResourceAllocationFormData {
     notes: string;
 }
 
-export default function ResourceAllocationForm() {
+interface ResourceAllocationFormProps {
+    allocationId?: number;
+    initialProjectId?: number;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+}
+
+export default function ResourceAllocationForm({ 
+    allocationId, 
+    initialProjectId, 
+    onSuccess, 
+    onCancel 
+}: ResourceAllocationFormProps = {}) {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const isEdit = !!id;
+    const isEdit = !!allocationId || !!id;
+    const editId = allocationId || (id ? Number(id) : undefined);
 
     const [formData, setFormData] = useState<ResourceAllocationFormData>({
-        project_id: '',
+        project_id: initialProjectId ? initialProjectId.toString() : '',
         user_id: '',
         role: '',
         allocation_percentage: '',
@@ -34,20 +47,15 @@ export default function ResourceAllocationForm() {
 
     const [errors, setErrors] = useState<Record<string, string[]>>({});
 
-    const { data: projectsData } = useQuery({
-        queryKey: ['projects', 'select'],
-        queryFn: () => projectService.getProjects({}, 100),
-    });
-
     const { data: usersData } = useQuery({
         queryKey: ['users', 'select'],
         queryFn: () => userService.getUsers({}, 100),
     });
 
     const { data: allocation, isLoading } = useQuery({
-        queryKey: ['resource-allocation', id],
-        queryFn: () => resourceAllocationService.getAllocation(Number(id!)),
-        enabled: isEdit,
+        queryKey: ['resource-allocation', editId],
+        queryFn: () => resourceAllocationService.getAllocation(editId!),
+        enabled: isEdit && !!editId,
     });
 
     useEffect(() => {
@@ -68,7 +76,11 @@ export default function ResourceAllocationForm() {
         mutationFn: resourceAllocationService.createAllocation,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['resource-allocations'] });
-            navigate('/resource-allocations');
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate('/resource-allocations');
+            }
         },
         onError: (error: any) => {
             if (error.response?.data?.errors) {
@@ -79,10 +91,14 @@ export default function ResourceAllocationForm() {
 
     const updateMutation = useMutation({
         mutationFn: (data: Partial<ResourceAllocation>) =>
-            resourceAllocationService.updateAllocation(Number(id!), data),
+            resourceAllocationService.updateAllocation(editId!, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['resource-allocations'] });
-            navigate('/resource-allocations');
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate('/resource-allocations');
+            }
         },
         onError: (error: any) => {
             if (error.response?.data?.errors) {
@@ -117,39 +133,31 @@ export default function ResourceAllocationForm() {
     }
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
-    const projects = projectsData?.data || [];
     const users = usersData?.data || [];
 
-    return (
-        <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6">
-                {isEdit ? 'Edit Resource Allocation' : 'Create New Resource Allocation'}
-            </h2>
+    const handleCancel = () => {
+        if (onCancel) {
+            onCancel();
+        } else {
+            navigate('/resource-allocations');
+        }
+    };
 
-            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow">
-                {/* Project */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Project *</label>
-                    <select
-                        value={formData.project_id}
-                        onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-lg ${
-                            errors.project_id ? 'border-red-500' : ''
-                        }`}
-                        required
-                        disabled={isEdit}
-                    >
-                        <option value="">Select a project</option>
-                        {projects.map((project) => (
-                            <option key={project.id} value={project.id}>
-                                {project.name}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.project_id && (
-                        <p className="mt-1 text-sm text-red-600">{errors.project_id[0]}</p>
-                    )}
-                </div>
+    return (
+        <form onSubmit={handleSubmit}>
+            {/* Project */}
+            <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Project *</label>
+                <ProjectSelector
+                    value={formData.project_id ? Number(formData.project_id) : undefined}
+                    onChange={(id) => setFormData({ ...formData, project_id: id ? id.toString() : '' })}
+                    disabled={isEdit}
+                    label=""
+                />
+                {errors.project_id && (
+                    <p className="mt-1 text-sm text-red-600">{errors.project_id[0]}</p>
+                )}
+            </div>
 
                 {/* User */}
                 <div className="mb-4">
@@ -252,13 +260,12 @@ export default function ResourceAllocationForm() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => navigate('/resource-allocations')}
-                        className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                        onClick={handleCancel}
+                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
                         Cancel
                     </button>
                 </div>
             </form>
-        </div>
     );
 }

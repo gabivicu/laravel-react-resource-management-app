@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domains\Project\Models\Project;
 use App\Domains\Project\Services\ProjectService;
 use App\Http\Requests\Project\StoreProjectRequest;
 use App\Http\Requests\Project\UpdateProjectRequest;
@@ -19,7 +20,7 @@ class ProjectController extends BaseController
      */
     public function index(Request $request)
     {
-        $this->authorize('viewAny', \App\Domains\Project\Models\Project::class);
+        $this->authorize('viewAny', Project::class);
 
         $filters = $request->only(['status', 'search']);
         $perPage = $request->get('per_page', 15);
