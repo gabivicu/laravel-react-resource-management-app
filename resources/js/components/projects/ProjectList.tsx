@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { projectService, ProjectListResponse } from '@/services/projects';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Modal from '@/components/ui/Modal';
 import ProjectForm from './ProjectForm';
 import ProjectDetailsModal from './ProjectDetailsModal';
@@ -20,6 +20,7 @@ export default function ProjectList() {
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 300);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [keyboardIndex, setKeyboardIndex] = useState(-1);
     
     const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
     const [viewingProjectId, setViewingProjectId] = useState<number | null>(null);
@@ -28,6 +29,8 @@ export default function ProjectList() {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     
     const searchContainerRef = useRef<HTMLDivElement>(null);
+    const suggestionsListRef = useRef<HTMLUListElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
     // Fetch suggestions
@@ -37,7 +40,7 @@ export default function ProjectList() {
         enabled: debouncedSearch.length > 1 && showSuggestions,
     });
 
-    const suggestions = suggestionsData?.data || [];
+    const suggestions = useMemo(() => suggestionsData?.data || [], [suggestionsData?.data]);
 
     const {
         data,
@@ -69,11 +72,17 @@ export default function ProjectList() {
         rootMargin: '200px',
     });
 
+    // Reset keyboard index when suggestions change
+    useEffect(() => {
+        setKeyboardIndex(-1);
+    }, [suggestions]);
+
     // Close suggestions on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
                 setShowSuggestions(false);
+                setKeyboardIndex(-1);
             }
         };
 
@@ -82,6 +91,61 @@ export default function ProjectList() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // Scroll to highlighted item
+    const scrollToIndex = (index: number) => {
+        if (suggestionsListRef.current && index >= 0) {
+            const items = suggestionsListRef.current.querySelectorAll('li');
+            const item = items[index];
+            if (item) {
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+    };
+
+    // Handle keyboard navigation
+    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!showSuggestions || suggestions.length === 0) {
+            if (e.key === 'ArrowDown' && debouncedSearch.length > 1) {
+                setShowSuggestions(true);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setKeyboardIndex((prev) => {
+                    const nextIndex = prev < suggestions.length - 1 ? prev + 1 : prev;
+                    scrollToIndex(nextIndex);
+                    return nextIndex;
+                });
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setKeyboardIndex((prev) => {
+                    const nextIndex = prev > 0 ? prev - 1 : -1;
+                    scrollToIndex(nextIndex);
+                    return nextIndex;
+                });
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (keyboardIndex >= 0 && keyboardIndex < suggestions.length) {
+                    const selectedProject = suggestions[keyboardIndex];
+                    setSearchQuery(selectedProject.name);
+                    setShowSuggestions(false);
+                    setKeyboardIndex(-1);
+                }
+                break;
+            case 'Escape':
+                e.preventDefault();
+                setShowSuggestions(false);
+                setKeyboardIndex(-1);
+                searchInputRef.current?.blur();
+                break;
+        }
+    };
 
     useEffect(() => {
         if (isLoadMoreVisible && hasNextPage && !isFetchingNextPage) {
@@ -136,13 +200,16 @@ export default function ProjectList() {
                 <div className="relative flex-1" ref={searchContainerRef}>
                     <div className="relative">
                         <input
+                            ref={searchInputRef}
                             type="text"
                             placeholder="Search projects..."
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
                                 setShowSuggestions(true);
+                                setKeyboardIndex(-1);
                             }}
+                            onKeyDown={handleSearchKeyDown}
                             onFocus={() => setShowSuggestions(true)}
                             className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
@@ -164,6 +231,7 @@ export default function ProjectList() {
                                 onClick={() => {
                                     setSearchQuery('');
                                     setShowSuggestions(false);
+                                    setKeyboardIndex(-1);
                                 }}
                                 className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
                             >
@@ -177,15 +245,20 @@ export default function ProjectList() {
                     {/* Suggestions Dropdown */}
                     {showSuggestions && suggestions.length > 0 && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            <ul>
-                                {suggestions.map((project) => (
+                            <ul ref={suggestionsListRef}>
+                                {suggestions.map((project, index) => (
                                     <li
                                         key={project.id}
                                         onClick={() => {
                                             setSearchQuery(project.name);
                                             setShowSuggestions(false);
+                                            setKeyboardIndex(-1);
                                         }}
-                                        className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 flex justify-between items-center"
+                                        className={`px-4 py-2 cursor-pointer text-sm text-gray-700 flex justify-between items-center ${
+                                            index === keyboardIndex 
+                                                ? 'bg-blue-50 border-l-2 border-blue-500' 
+                                                : 'hover:bg-gray-50'
+                                        }`}
                                     >
                                         <span>{project.name}</span>
                                         <span className={`text-xs px-2 py-0.5 rounded ${statusColors[project.status]}`}>

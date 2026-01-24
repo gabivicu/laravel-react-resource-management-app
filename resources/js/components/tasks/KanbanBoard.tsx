@@ -216,37 +216,37 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                 </div>
             </div>
 
-            <div className="flex gap-4 overflow-x-auto pb-4">
+            <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
             {Object.entries(statusConfig).map(([status, config]) => {
                 const statusTasks = tasks[status as keyof typeof tasks] || [];
                 
                 return (
                     <div
                         key={status}
-                        className="flex-shrink-0 w-80"
+                        className="flex-shrink-0 w-[280px] sm:w-80 snap-start"
                         onDragOver={handleDragOver}
                         onDrop={() => handleDrop(status)}
                     >
-                        <div className={`${config.color} ${config.textColor} p-3 rounded-t-lg font-semibold`}>
+                        <div className={`${config.color} ${config.textColor} p-2 sm:p-3 rounded-t-lg font-semibold`}>
                             <div className="flex justify-between items-center">
-                                <span>{config.label}</span>
-                                <span className="text-sm bg-white bg-opacity-50 px-2 py-1 rounded">
+                                <span className="text-sm sm:text-base">{config.label}</span>
+                                <span className="text-xs sm:text-sm bg-white bg-opacity-50 px-2 py-1 rounded">
                                     {statusTasks.length}
                                 </span>
                             </div>
                         </div>
-                        <div className="bg-gray-50 min-h-[400px] p-3 rounded-b-lg space-y-3 max-h-[calc(100vh-250px)] overflow-y-auto">
+                        <div className="bg-gray-50 min-h-[300px] sm:min-h-[400px] p-2 sm:p-3 rounded-b-lg space-y-2 sm:space-y-3 max-h-[calc(100vh-200px)] sm:max-h-[calc(100vh-250px)] overflow-y-auto">
                             {statusTasks.map((task) => (
                                 <div
                                     key={task.id}
                                     draggable
                                     onDragStart={() => handleDragStart(task, status)}
-                                    className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md cursor-move transition-shadow"
+                                    className="bg-white p-3 sm:p-4 rounded-lg shadow-sm hover:shadow-md cursor-move transition-shadow"
                                 >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h4 className="font-medium text-gray-900">{task.title}</h4>
+                                    <div className="flex justify-between items-start mb-2 gap-2">
+                                        <h4 className="font-medium text-gray-900 text-sm sm:text-base flex-1 min-w-0">{task.title}</h4>
                                         <span
-                                            className={`px-2 py-1 text-xs rounded ${
+                                            className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs rounded flex-shrink-0 ${
                                                 priorityColors[task.priority]
                                             }`}
                                         >
@@ -255,13 +255,13 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                                     </div>
                                     
                                     {task.description && (
-                                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                        <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
                                             {task.description}
                                         </p>
                                     )}
 
                                     {task.project && (
-                                        <div className="text-xs text-gray-500 mb-1 font-medium text-blue-600">
+                                        <div className="text-xs text-gray-500 mb-1 font-medium text-blue-600 truncate">
                                             {task.project.name}
                                         </div>
                                     )}
@@ -277,14 +277,14 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                                             {task.assignees.slice(0, 3).map((assignee) => (
                                                 <div
                                                     key={assignee.id}
-                                                    className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center"
+                                                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center"
                                                     title={assignee.name}
                                                 >
                                                     {assignee.name.charAt(0).toUpperCase()}
                                                 </div>
                                             ))}
                                             {task.assignees.length > 3 && (
-                                                <div className="w-6 h-6 rounded-full bg-gray-300 text-gray-700 text-xs flex items-center justify-center">
+                                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-300 text-gray-700 text-xs flex items-center justify-center">
                                                     +{task.assignees.length - 3}
                                                 </div>
                                             )}

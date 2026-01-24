@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '@/services/projects';
 import useDebounce from '@/hooks/useDebounce';
@@ -24,7 +24,10 @@ export default function ProjectSelector({
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProject, setSelectedProject] = useState<Project | null>(initialProject || null);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [keyboardIndex, setKeyboardIndex] = useState(-1);
     const containerRef = useRef<HTMLDivElement>(null);
+    const suggestionsListRef = useRef<HTMLUListElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -58,23 +61,82 @@ export default function ProjectSelector({
         enabled: debouncedSearch.length > 1 && !selectedProject && showSuggestions,
     });
 
-    const suggestions = suggestionsData?.data || [];
+    const suggestions = useMemo(() => suggestionsData?.data || [], [suggestionsData?.data]);
 
     // Handle click outside to close suggestions
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
                 setShowSuggestions(false);
+                setKeyboardIndex(-1);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Reset keyboard index when suggestions change
+    useEffect(() => {
+        setKeyboardIndex(-1);
+    }, [suggestions]);
+
+    // Handle keyboard navigation
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!showSuggestions || suggestions.length === 0) {
+            if (e.key === 'ArrowDown' && debouncedSearch.length > 1) {
+                setShowSuggestions(true);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setKeyboardIndex((prev) => {
+                    const nextIndex = prev < suggestions.length - 1 ? prev + 1 : prev;
+                    scrollToIndex(nextIndex);
+                    return nextIndex;
+                });
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setKeyboardIndex((prev) => {
+                    const nextIndex = prev > 0 ? prev - 1 : -1;
+                    scrollToIndex(nextIndex);
+                    return nextIndex;
+                });
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (keyboardIndex >= 0 && keyboardIndex < suggestions.length) {
+                    handleSelect(suggestions[keyboardIndex]);
+                }
+                break;
+            case 'Escape':
+                e.preventDefault();
+                setShowSuggestions(false);
+                setKeyboardIndex(-1);
+                inputRef.current?.blur();
+                break;
+        }
+    };
+
+    // Scroll to highlighted item
+    const scrollToIndex = (index: number) => {
+        if (suggestionsListRef.current && index >= 0) {
+            const items = suggestionsListRef.current.querySelectorAll('li');
+            const item = items[index];
+            if (item) {
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+    };
+
     const handleSelect = (project: Project) => {
         setSelectedProject(project);
         setSearchQuery(project.name);
         setShowSuggestions(false);
+        setKeyboardIndex(-1);
         onChange(project.id.toString());
     };
 
@@ -92,6 +154,7 @@ export default function ProjectSelector({
             onChange('');
         }
         setShowSuggestions(true);
+        setKeyboardIndex(-1);
     };
 
     return (
@@ -99,9 +162,11 @@ export default function ProjectSelector({
             <label className="block text-sm font-medium mb-2">{label}</label>
             <div className="relative">
                 <input
+                    ref={inputRef}
                     type="text"
                     value={searchQuery}
                     onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
                     onFocus={() => setShowSuggestions(true)}
                     disabled={disabled}
                     placeholder="Search for a project..."
@@ -131,12 +196,16 @@ export default function ProjectSelector({
 
             {showSuggestions && suggestions.length > 0 && !selectedProject && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    <ul>
-                        {suggestions.map((project) => (
+                    <ul ref={suggestionsListRef}>
+                        {suggestions.map((project, index) => (
                             <li
                                 key={project.id}
                                 onClick={() => handleSelect(project)}
-                                className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 flex justify-between items-center"
+                                className={`px-4 py-2 cursor-pointer text-sm text-gray-700 flex justify-between items-center ${
+                                    index === keyboardIndex 
+                                        ? 'bg-blue-50 border-l-2 border-blue-500' 
+                                        : 'hover:bg-gray-50'
+                                }`}
                             >
                                 <span>{project.name}</span>
                                 <span className={`text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600`}>
