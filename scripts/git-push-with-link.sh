@@ -35,10 +35,13 @@ if [ $? -eq 0 ]; then
                 # Construct GitHub commit URL
                 COMMIT_URL="https://github.com/${REPO_PATH}/commit/${LATEST_COMMIT}"
                 
-                # Display the link
+                # Display the link (using OSC 8 for clickable links in modern terminals)
                 echo ""
                 echo -e "${GREEN}✓ Push successful!${NC}"
-                echo -e "${BLUE}📎 Commit link: ${COMMIT_URL}${NC}"
+                # Try to create clickable link (OSC 8 format)
+                echo -e "\033]8;;${COMMIT_URL}\033\\${BLUE}📎 Commit link: ${COMMIT_URL}\033]8;;\033\\${NC}"
+                echo ""
+                echo "   (Click the link above or copy it)"
                 echo ""
             fi
         fi
