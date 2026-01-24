@@ -4,6 +4,7 @@ namespace App\Domains\Task\Services;
 
 use App\Domains\Task\Models\Task;
 use App\Domains\Task\Repositories\TaskRepository;
+use App\Events\TaskMoved;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -111,7 +112,11 @@ class TaskService
             $task->assignees()->sync($data['assignee_ids']);
         }
 
-        return $task->load(['project', 'assignees']);
+        $task->load(['project', 'assignees']);
+
+        TaskMoved::dispatch($task);
+
+        return $task;
     }
 
     /**
@@ -128,7 +133,11 @@ class TaskService
 
         $task->update($updateData);
 
-        return $task->load(['project', 'assignees']);
+        $task->load(['project', 'assignees']);
+
+        TaskMoved::dispatch($task);
+
+        return $task;
     }
 
     /**

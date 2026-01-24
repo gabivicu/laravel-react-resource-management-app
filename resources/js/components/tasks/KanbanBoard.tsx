@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/tasks';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { Task } from '@/types';
 import ProjectSelector from '@/components/projects/ProjectSelector';
@@ -36,6 +36,55 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     
     const [draggedTask, setDraggedTask] = useState<Task | null>(null);
     const [draggedFrom, setDraggedFrom] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!selectedProjectId) return;
+
+        const channel = window.Echo.private(`projects.${selectedProjectId}`);
+
+        channel.listen('.TaskMoved', (e: any) => {
+            queryClient.setQueryData(['tasks', 'kanban', selectedProjectId], (old: any) => {
+                if (!old) return old;
+
+                const updated = { ...old };
+                const taskData = e;
+                let foundTask: Task | undefined;
+                
+                // Find existing task
+                Object.keys(updated).forEach((status) => {
+                    const statusTasks = updated[status] || [];
+                    const index = statusTasks.findIndex((t: Task) => t.id === taskData.id);
+                    if (index !== -1) {
+                        foundTask = statusTasks[index];
+                        // Remove from old position
+                        updated[status] = statusTasks.filter((t: Task) => t.id !== taskData.id);
+                    }
+                });
+
+                if (foundTask) {
+                    // Update task properties
+                    const updatedTask = { ...foundTask, ...taskData };
+                    
+                    // Add to new status array
+                    const targetStatus = taskData.status as string;
+                    const targetTasks = updated[targetStatus] || [];
+                    
+                    // Insert and sort
+                    updated[targetStatus] = [...targetTasks, updatedTask].sort((a: Task, b: Task) => a.order - b.order);
+                    
+                    return updated;
+                } else {
+                    // Task not found locally, fetch fresh data
+                    queryClient.invalidateQueries({ queryKey: ['tasks', 'kanban', selectedProjectId] });
+                    return old;
+                }
+            });
+        });
+
+        return () => {
+            window.Echo.leave(`projects.${selectedProjectId}`);
+        };
+    }, [selectedProjectId, queryClient]);
 
     const { data: kanbanData, isLoading, isError, error } = useQuery({
         queryKey: ['tasks', 'kanban', selectedProjectId],
