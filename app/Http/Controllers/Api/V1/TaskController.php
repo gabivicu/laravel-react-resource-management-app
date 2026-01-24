@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domains\Task\Models\Task;
 use App\Domains\Task\Services\TaskService;
 use App\Http\Requests\Task\StoreTaskRequest;
 use App\Http\Requests\Task\UpdateTaskRequest;
@@ -19,7 +20,7 @@ class TaskController extends BaseController
      */
     public function index(Request $request)
     {
-        $this->authorize('viewAny', \App\Domains\Task\Models\Task::class);
+        $this->authorize('viewAny', Task::class);
 
         $filters = $request->only(['project_id', 'status', 'priority', 'search']);
         $perPage = $request->get('per_page', 15);

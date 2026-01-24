@@ -2,10 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { resourceAllocationService } from '@/services/resourceAllocations';
 import { projectService } from '@/services/projects';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Modal from '@/components/ui/Modal';
+import ResourceAllocationForm from './ResourceAllocationForm';
 
 export default function ResourceAllocationList() {
     const [projectFilter, setProjectFilter] = useState<string>('');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingAllocationId, setEditingAllocationId] = useState<number | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const queryClient = useQueryClient();
 
     const { data: projectsData } = useQuery({
@@ -46,16 +50,21 @@ export default function ResourceAllocationList() {
     const allocations = data?.data || [];
     const projects = projectsData?.data || [];
 
+    const openEditModal = (allocationId: number) => {
+        setEditingAllocationId(allocationId);
+        setIsEditModalOpen(true);
+    };
+
     return (
         <div className="w-full">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Resource Allocations</h2>
-                <Link
-                    to="/resource-allocations/create"
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
                     className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
                 >
                     + New Allocation
-                </Link>
+                </button>
             </div>
 
             {/* Filters */}
@@ -78,12 +87,12 @@ export default function ResourceAllocationList() {
             {allocations.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                     <p className="mb-4">No allocations found.</p>
-                    <Link
-                        to="/resource-allocations/create"
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="text-blue-600 hover:text-blue-700"
                     >
                         Create your first allocation
-                    </Link>
+                    </button>
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -140,12 +149,12 @@ export default function ResourceAllocationList() {
                                     </td>
                                     <td className="px-6 py-4 text-sm">
                                         <div className="flex gap-2">
-                                            <Link
-                                                to={`/resource-allocations/${allocation.id}/edit`}
+                                            <button
+                                                onClick={() => openEditModal(allocation.id)}
                                                 className="text-blue-600 hover:text-blue-800"
                                             >
                                                 Edit
-                                            </Link>
+                                            </button>
                                             <button
                                                 onClick={() => {
                                                     if (confirm('Are you sure you want to delete this allocation?')) {
@@ -165,6 +174,42 @@ export default function ResourceAllocationList() {
                     </table>
                 </div>
             )}
+
+            {/* Create Modal */}
+            <Modal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                title="Create New Resource Allocation"
+            >
+                <ResourceAllocationForm
+                    onSuccess={() => setIsCreateModalOpen(false)}
+                    onCancel={() => setIsCreateModalOpen(false)}
+                />
+            </Modal>
+
+            {/* Edit Modal */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingAllocationId(null);
+                }}
+                title="Edit Resource Allocation"
+            >
+                {editingAllocationId && (
+                    <ResourceAllocationForm
+                        allocationId={editingAllocationId}
+                        onSuccess={() => {
+                            setIsEditModalOpen(false);
+                            setEditingAllocationId(null);
+                        }}
+                        onCancel={() => {
+                            setIsEditModalOpen(false);
+                            setEditingAllocationId(null);
+                        }}
+                    />
+                )}
+            </Modal>
         </div>
     );
 }
