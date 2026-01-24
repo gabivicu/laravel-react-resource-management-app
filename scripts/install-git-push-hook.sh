@@ -8,7 +8,7 @@ HOOK_FUNCTION='# Git push with commit link (added by install-git-push-hook.sh)
 git() {
     if [ "$1" = "push" ]; then
         # Execute git push and capture output
-        OUTPUT=$(command git push "$@" 2>&1)
+        OUTPUT=$(command git "$@" 2>&1)
         EXIT_CODE=$?
         echo "$OUTPUT"
         
