@@ -216,14 +216,14 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                 </div>
             </div>
 
-            <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+            <div className="flex gap-2 sm:gap-4 lg:gap-6 overflow-x-auto pb-4 snap-x snap-mandatory 2xl:justify-center 2xl:overflow-x-visible 2xl:max-w-[1920px] 2xl:mx-auto">
             {Object.entries(statusConfig).map(([status, config]) => {
                 const statusTasks = tasks[status as keyof typeof tasks] || [];
                 
                 return (
                     <div
                         key={status}
-                        className="flex-shrink-0 w-[280px] sm:w-80 snap-start"
+                        className="flex-shrink-0 w-[280px] sm:w-80 2xl:w-auto 2xl:flex-1 2xl:min-w-[350px] 2xl:max-w-[450px] snap-start"
                         onDragOver={handleDragOver}
                         onDrop={() => handleDrop(status)}
                     >
