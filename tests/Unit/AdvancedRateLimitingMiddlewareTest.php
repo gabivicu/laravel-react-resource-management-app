@@ -58,7 +58,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
 
         // Set cache to exceed limit for 'strict' type (limit is 10)
         $identifier = 'ip:127.0.0.1';
-        $key = "rate_limit:strict:{$identifier}:".md5('/test');
+        $key = "rate_limit:strict:{$identifier}:".md5('test');
         Cache::put($key, 10, now()->addMinutes(1));
 
         $response = $this->middleware->handle($request, $next, 'strict');
@@ -83,7 +83,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         $response = $this->middleware->handle($request, $next, 'default');
 
         // Verify cache key was created with IP
-        $key = 'rate_limit:default:ip:192.168.1.100:'.md5('/test');
+        $key = 'rate_limit:default:ip:192.168.1.100:'.md5('test');
         $this->assertTrue(Cache::has($key) || Cache::get($key, 0) >= 0);
     }
 
@@ -106,7 +106,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         $response = $this->middleware->handle($request, $next, 'default');
 
         // Verify cache key was created with user ID
-        $key = 'rate_limit:default:user:123:'.md5('/test');
+        $key = 'rate_limit:default:user:123:'.md5('test');
         $this->assertTrue(Cache::has($key) || Cache::get($key, 0) >= 0);
     }
 
@@ -188,7 +188,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         // Simulate 10 violations
         for ($i = 0; $i < 10; $i++) {
             // Set cache to exceed limit
-            $key = "rate_limit:strict:{$identifier}:".md5('/test');
+            $key = "rate_limit:strict:{$identifier}:".md5('test');
             Cache::put($key, 10, now()->addMinutes(1));
 
             // Trigger violation
@@ -196,7 +196,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         }
 
         // Next request should be blocked
-        $key = "rate_limit:strict:{$identifier}:".md5('/test');
+        $key = "rate_limit:strict:{$identifier}:".md5('test');
         Cache::forget($key); // Clear rate limit to test blocking
 
         $response = $this->middleware->handle($request, $next, 'strict');
@@ -217,7 +217,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         };
 
         $identifier = 'ip:127.0.0.1';
-        $key = "rate_limit:default:{$identifier}:".md5('/test');
+        $key = "rate_limit:default:{$identifier}:".md5('test');
 
         // First request
         $this->middleware->handle($request, $next, 'default');
@@ -268,10 +268,16 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
 
         // Set cache to exceed limit
         $identifier = 'ip:127.0.0.1';
-        $key = "rate_limit:strict:{$identifier}:".md5('/test');
+        $key = "rate_limit:strict:{$identifier}:".md5('test');
         Cache::put($key, 10, now()->addMinutes(1));
 
-        $this->middleware->handle($request, $next, 'strict');
+        $response = $this->middleware->handle($request, $next, 'strict');
+
+        // Verify that the request was rate limited (which triggers the log)
+        $this->assertEquals(429, $response->getStatusCode());
+
+        // Verify mock expectations were met
+        Mockery::getContainer()->mockery_verify();
     }
 
     #[Test]
@@ -294,7 +300,13 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         $blockKey = "rate_limit_blocked:{$identifier}";
         Cache::put($blockKey, true, now()->addHours(24));
 
-        $this->middleware->handle($request, $next, 'default');
+        $response = $this->middleware->handle($request, $next, 'default');
+
+        // Verify that the request was blocked (which triggers the log)
+        $this->assertEquals(429, $response->getStatusCode());
+
+        // Verify mock expectations were met
+        Mockery::getContainer()->mockery_verify();
     }
 
     #[Test]
@@ -309,7 +321,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
 
         $identifier = 'ip:192.168.1.400';
         $violationKey = "rate_limit_violations:{$identifier}";
-        $key = "rate_limit:strict:{$identifier}:".md5('/test');
+        $key = "rate_limit:strict:{$identifier}:".md5('test');
 
         // Simulate 5 violations
         for ($i = 0; $i < 5; $i++) {
@@ -336,8 +348,8 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         };
 
         $identifier = 'ip:127.0.0.1';
-        $key1 = "rate_limit:default:{$identifier}:".md5('/path1');
-        $key2 = "rate_limit:default:{$identifier}:".md5('/path2');
+        $key1 = "rate_limit:default:{$identifier}:".md5('path1');
+        $key2 = "rate_limit:default:{$identifier}:".md5('path2');
 
         $this->middleware->handle($request1, $next, 'default');
         $this->middleware->handle($request2, $next, 'default');
@@ -357,9 +369,9 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
         };
 
         $identifier = 'ip:127.0.0.1';
-        $keyAuth = "rate_limit:auth:{$identifier}:".md5('/test');
-        $keyWrite = "rate_limit:write:{$identifier}:".md5('/test');
-        $keyRead = "rate_limit:read:{$identifier}:".md5('/test');
+        $keyAuth = "rate_limit:auth:{$identifier}:".md5('test');
+        $keyWrite = "rate_limit:write:{$identifier}:".md5('test');
+        $keyRead = "rate_limit:read:{$identifier}:".md5('test');
 
         $this->middleware->handle($request, $next, 'auth');
         $this->middleware->handle($request, $next, 'write');
@@ -382,7 +394,7 @@ class AdvancedRateLimitingMiddlewareTest extends TestCase
 
         // Set cache to exceed limit for auth (15 minutes decay)
         $identifier = 'ip:127.0.0.1';
-        $key = "rate_limit:auth:{$identifier}:".md5('/test');
+        $key = "rate_limit:auth:{$identifier}:".md5('test');
         Cache::put($key, 5, now()->addMinutes(15));
 
         $response = $this->middleware->handle($request, $next, 'auth');

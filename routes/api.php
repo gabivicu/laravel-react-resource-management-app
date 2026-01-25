@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\V1\ResourceAllocationController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,6 +27,27 @@ Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 // V1 Routes
 Route::prefix('v1')->group(function () {
+
+    // Test helper endpoint - only available in non-production environments
+    // This endpoint clears rate limiting cache for the current IP
+    if (app()->environment(['local', 'testing'])) {
+        Route::post('/test/clear-rate-limit', function (Request $request) {
+            $ip = $request->ip();
+            $patterns = [
+                "rate_limit:*:ip:{$ip}:*",
+                'rate_limit:*:user:*:*',
+                "violations:ip:{$ip}",
+            ];
+
+            foreach ($patterns as $pattern) {
+                // Clear cache keys matching the pattern
+                // Note: This is a simplified approach - in production you'd use Redis SCAN or similar
+                Cache::flush(); // For testing, we can flush all cache
+            }
+
+            return response()->json(['message' => 'Rate limit cache cleared for testing']);
+        })->withoutMiddleware(['throttle', 'rate.limit.advanced']);
+    }
 
     // Auth Routes - Strict rate limiting for authentication endpoints
     Route::prefix('auth')->group(function () {

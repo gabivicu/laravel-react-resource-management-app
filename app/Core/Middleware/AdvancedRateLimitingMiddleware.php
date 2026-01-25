@@ -98,7 +98,7 @@ class AdvancedRateLimitingMiddleware
     {
         // If user is authenticated, use user ID for more accurate limiting
         if ($request->user()) {
-            return 'user:'.$request->user()->id;
+            return 'user:'.$request->user()->getAuthIdentifier();
         }
 
         // Otherwise use IP address
