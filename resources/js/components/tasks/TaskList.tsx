@@ -27,7 +27,7 @@ export default function TaskList() {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [priorityFilter, setPriorityFilter] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState<string>('created_at');
+    const [sortBy, setSortBy] = useState<string>('title');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const debouncedSearch = useDebounce(searchQuery, 300);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -133,7 +133,19 @@ export default function TaskList() {
         );
     }
 
-    const tasks = data?.pages.flatMap((page) => page.data) || [];
+    // Flatten and deduplicate tasks to avoid duplicate keys
+    // Important: Maintain sort order from backend by processing pages in order
+    const allTasks = data?.pages.flatMap((page) => page.data) || [];
+    
+    // Deduplicate while preserving order (keep first occurrence)
+    const seenIds = new Set<number>();
+    const tasks = allTasks.filter((task) => {
+        if (seenIds.has(task.id)) {
+            return false; // Skip duplicates
+        }
+        seenIds.add(task.id);
+        return true;
+    });
 
     return (
         <div className="w-full">
@@ -224,8 +236,8 @@ export default function TaskList() {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                    <option value="created_at">Sort by Date Created</option>
                     <option value="title">Sort by Title</option>
+                    <option value="created_at">Sort by Created Date</option>
                     <option value="due_date">Sort by Due Date</option>
                     <option value="priority">Sort by Priority</option>
                     <option value="status">Sort by Status</option>
@@ -259,13 +271,13 @@ export default function TaskList() {
             {tasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                     <p className="mb-4">No tasks found matching your criteria.</p>
-                    {(searchQuery || statusFilter || priorityFilter || sortBy !== 'created_at' || sortOrder !== 'desc') ? (
+                    {(searchQuery || statusFilter || priorityFilter || sortBy !== 'title' || sortOrder !== 'desc') ? (
                         <button
                             onClick={() => {
                                 setSearchQuery('');
                                 setStatusFilter('');
                                 setPriorityFilter('');
-                                setSortBy('created_at');
+                                setSortBy('title');
                                 setSortOrder('desc');
                             }}
                             className="text-blue-600 hover:text-blue-700"
