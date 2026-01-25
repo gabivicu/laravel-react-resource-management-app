@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Middleware for multi-tenancy
         $middleware->alias([
             'tenant' => \App\Core\Middleware\TenantScopeMiddleware::class,
+            'rate.limit.advanced' => \App\Core\Middleware\AdvancedRateLimitingMiddleware::class,
         ]);
 
         // Configure CORS for API
