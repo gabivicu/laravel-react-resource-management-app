@@ -6,6 +6,8 @@ export interface TaskFilters {
     status?: Task['status'];
     priority?: Task['priority'];
     search?: string;
+    sort_by?: 'created_at' | 'title' | 'due_date' | 'priority' | 'status';
+    sort_order?: 'asc' | 'desc';
 }
 
 export interface TaskListResponse {

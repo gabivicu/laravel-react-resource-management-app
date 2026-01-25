@@ -1,5 +1,29 @@
 FROM node:20-alpine
 
+# Install dependencies required for Cypress (headless mode)
+# For headless mode, we need minimal dependencies
+RUN apk add --no-cache \
+    xvfb \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    ttf-dejavu \
+    && rm -rf /var/cache/apk/*
+
+# Create symlink for chromium (Cypress expects chromium-browser)
+RUN ln -s /usr/bin/chromium /usr/bin/chromium-browser || true
+
+# Set environment variables for headless browser
+ENV DISPLAY=:99
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROMIUM_BIN=/usr/bin/chromium-browser
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 # Set working directory
 WORKDIR /app
 

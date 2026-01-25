@@ -130,6 +130,21 @@ services:
       - VITE_REVERB_PORT=8080
       - VITE_REVERB_SCHEME=http
 
+  # Cypress E2E Runner (use for Docker-based tests)
+  cypress:
+    image: cypress/included:13.17.0
+    container_name: resource_management_cypress
+    working_dir: /e2e
+    volumes:
+      - ./:/e2e
+    networks:
+      - resource_management_network
+    environment:
+      - CYPRESS_BASE_URL=http://nginx:80
+      - DOCKER=true
+    depends_on:
+      - nginx
+
   # Nginx Web Server
   nginx:
     image: nginx:alpine

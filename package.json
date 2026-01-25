@@ -10,9 +10,13 @@
         "lint:fix": "eslint resources/js --ext .ts,.tsx --fix",
         "test": "vitest",
         "test:ui": "vitest --ui",
-        "test:coverage": "vitest --coverage"
+        "test:coverage": "vitest --coverage",
+        "test:e2e": "cypress run --browser chromium",
+        "test:e2e:open": "cypress open",
+        "test:e2e:headed": "cypress run --headed --browser chromium"
     },
     "dependencies": {
+        "@sentry/react": "^8.0.0",
         "@tanstack/react-query": "^5.56.2",
         "axios": "^1.11.0",
         "react": "^18.3.1",
@@ -21,6 +25,7 @@
         "zustand": "^5.0.1"
     },
     "devDependencies": {
+        "@types/node": "^22.10.2",
         "@tailwindcss/vite": "^4.0.0",
         "@testing-library/jest-dom": "^6.1.5",
         "@testing-library/react": "^14.1.2",
@@ -31,6 +36,7 @@
         "@typescript-eslint/parser": "^8.8.1",
         "@vitejs/plugin-react": "^4.7.0",
         "@vitest/ui": "^1.0.4",
+        "cypress": "^13.7.0",
         "concurrently": "^9.0.1",
         "eslint": "^9.12.0",
         "eslint-plugin-react": "^7.37.5",
