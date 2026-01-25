@@ -8,6 +8,7 @@ use App\Http\Requests\Task\StoreTaskRequest;
 use App\Http\Requests\Task\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends BaseController
 {
@@ -22,7 +23,7 @@ class TaskController extends BaseController
     {
         $this->authorize('viewAny', Task::class);
 
-        $filters = $request->only(['project_id', 'status', 'priority', 'search']);
+        $filters = $request->only(['project_id', 'status', 'priority', 'search', 'sort_by', 'sort_order']);
         $perPage = $request->get('per_page', 15);
 
         $tasks = $this->taskService->getPaginated($filters, $perPage);
@@ -47,17 +48,30 @@ class TaskController extends BaseController
      */
     public function kanban(Request $request)
     {
-        $projectId = $request->get('project_id');
+        $this->authorize('viewAny', Task::class);
 
-        $tasks = $this->taskService->getGroupedByStatus($projectId);
+        try {
+            $projectId = $request->get('project_id');
 
-        // Transform grouped tasks
-        $transformedTasks = [];
-        foreach ($tasks as $status => $statusTasks) {
-            $transformedTasks[$status] = TaskResource::collection($statusTasks)->resolve();
+            $tasks = $this->taskService->getGroupedByStatus($projectId);
+
+            // Transform grouped tasks
+            $transformedTasks = [];
+            foreach ($tasks as $status => $statusTasks) {
+                $transformedTasks[$status] = TaskResource::collection($statusTasks)->resolve();
+            }
+
+            return $this->success($transformedTasks, 'Tasks retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error('Kanban board error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'project_id' => $request->get('project_id'),
+                'user_id' => $request->user()?->id,
+            ]);
+
+            return $this->error('Failed to load Kanban board: '.$e->getMessage(), 500);
         }
-
-        return $this->success($transformedTasks, 'Tasks retrieved successfully');
     }
 
     /**
