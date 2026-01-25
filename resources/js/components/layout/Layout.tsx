@@ -32,11 +32,11 @@ export default function Layout({ children }: LayoutProps) {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50" data-testid="app-layout">
             <Header onMenuClick={handleMenuClick} />
             <div className="flex">
                 <Sidebar isOpen={sidebarOpen} onClose={handleCloseSidebar} />
-                <main className="flex-1 p-4 sm:p-6 bg-gray-50 min-w-0">
+                <main className="flex-1 p-4 sm:p-6 bg-gray-50 min-w-0" data-testid="main-content">
                     {children}
                 </main>
             </div>

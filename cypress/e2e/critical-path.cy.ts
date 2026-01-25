@@ -25,7 +25,7 @@ describe('Critical Path: Login → Create Project → Create Task → Verify Tas
         
         // Verify we're logged in and on the dashboard
         cy.url().should('not.include', '/login');
-        cy.get('nav, .sidebar').should('be.visible');
+        cy.get('header, aside, main, [data-testid="app-layout"]').should('be.visible');
 
         // Step 2: Navigate to Projects page
         cy.visit('/projects');

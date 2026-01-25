@@ -39,7 +39,8 @@ Cypress.Commands.add('login', (email = DEFAULT_EMAIL, password = DEFAULT_PASSWOR
     
     // Check if we are already logged in
     cy.get('body').then($body => {
-        if ($body.find('nav, [data-testid="dashboard"], .sidebar').length > 0) {
+        // Check for elements that indicate we're logged in: header, aside (sidebar), or main content
+        if ($body.find('header, aside, main, [data-testid="dashboard"]').length > 0) {
             cy.log('Already logged in');
             return;
         }
@@ -55,11 +56,12 @@ Cypress.Commands.add('login', (email = DEFAULT_EMAIL, password = DEFAULT_PASSWOR
         // Submit form
         cy.get('button[type="submit"]').click();
         
-        // Wait for navigation to dashboard
+        // Wait for navigation to dashboard (URL should not include /login)
         cy.url().should('not.include', '/login');
         
-        // Wait for main content to load
-        cy.get('nav, [data-testid="dashboard"], .sidebar', { timeout: 20000 }).should('be.visible');
+        // Wait for main content to load - check for header, aside (sidebar), or main element
+        // These elements are present in the Layout component when user is logged in
+        cy.get('header, aside, main', { timeout: 20000 }).should('be.visible');
     });
 });
 
@@ -78,7 +80,8 @@ Cypress.Commands.add('isLoggedIn', () => {
         if (url.includes('/login')) {
             return false;
         }
-        return cy.get('nav, [data-testid="dashboard"], .sidebar').should('exist').then(() => true);
+        // Check for elements that indicate we're logged in
+        return cy.get('header, aside, main, [data-testid="dashboard"]').should('exist').then(() => true);
     });
 });
 

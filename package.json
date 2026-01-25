@@ -11,9 +11,10 @@
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:coverage": "vitest --coverage",
-        "test:e2e": "cypress run --browser chromium",
+        "test:e2e": "cypress run --browser chrome",
         "test:e2e:open": "cypress open",
-        "test:e2e:headed": "cypress run --headed --browser chromium"
+        "test:e2e:headed": "cypress run --headed --browser chrome",
+        "test:e2e:electron": "cypress run --browser electron"
     },
     "dependencies": {
         "@sentry/react": "^8.0.0",
