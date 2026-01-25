@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import * as Sentry from '@sentry/react';
 
 interface Props {
@@ -62,7 +62,7 @@ class ErrorBoundary extends Component<Props, State> {
                             Something went wrong
                         </h2>
                         <p className="text-gray-600 mb-4">
-                            We're sorry, but something unexpected happened. The error has been reported to our team.
+                            We&apos;re sorry, but something unexpected happened. The error has been reported to our team.
                         </p>
                         <button
                             onClick={() => {

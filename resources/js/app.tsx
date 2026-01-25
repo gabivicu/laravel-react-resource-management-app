@@ -29,8 +29,6 @@ if (sentryDsn) {
         // Session Replay
         replaysSessionSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
         replaysOnErrorSampleRate: 1.0,
-        // Capture unhandled promise rejections
-        captureUnhandledRejections: true,
     });
 }
 
