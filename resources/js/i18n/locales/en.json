@@ -18,7 +18,10 @@
         "confirm": "Confirm",
         "yes": "Yes",
         "no": "No",
-        "scrollToLoadMore": "Scroll to load more"
+        "scrollToLoadMore": "Scroll to load more",
+        "upload": "Upload",
+        "remove": "Remove",
+        "optional": "Optional"
     },
     "auth": {
         "login": "Login",
@@ -32,6 +35,8 @@
         "rememberMe": "Remember Me",
         "alreadyHaveAccount": "Already have an account?",
         "dontHaveAccount": "Don't have an account?",
+        "editProfile": "Edit Profile",
+        "avatar": "Profile Picture",
         "loginError": "Invalid email or password",
         "registerError": "Registration failed",
         "loggingIn": "Logging in..."
@@ -244,5 +249,10 @@
         "byProject": "By Project:",
         "tasks": "tasks",
         "noDataAvailable": "No data available"
+    },
+    "profile": {
+        "updateSuccess": "Profile updated successfully",
+        "updateError": "Failed to update profile",
+        "removeAvatarError": "Failed to remove avatar"
     }
 }

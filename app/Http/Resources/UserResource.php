@@ -9,11 +9,19 @@ class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $avatar = $this->avatar;
+
+        // Convert relative URL to absolute if needed
+        if ($avatar && ! str_starts_with($avatar, 'http')) {
+            $appUrl = rtrim(config('app.url'), '/');
+            $avatar = $appUrl.$avatar;
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'avatar' => $this->avatar,
+            'avatar' => $avatar,
             'role' => $this->whenPivotLoaded('project_members', function () {
                 return $this->pivot->role;
             }),

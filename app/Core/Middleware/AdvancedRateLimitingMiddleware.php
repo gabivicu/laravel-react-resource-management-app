@@ -26,6 +26,11 @@ class AdvancedRateLimitingMiddleware
      */
     public function handle(Request $request, Closure $next, string $limitType = 'default'): Response
     {
+        // Skip rate limiting in local environment
+        if (app()->environment('local')) {
+            return $next($request);
+        }
+
         $identifier = $this->getIdentifier($request);
         $key = $this->getCacheKey($identifier, $limitType, $request->path());
 

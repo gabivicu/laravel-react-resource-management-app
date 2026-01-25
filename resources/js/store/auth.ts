@@ -26,7 +26,8 @@ export const useAuthStore = create<AuthState>()(
 
             setUser: (user) => {
                 set({ user, isAuthenticated: true });
-                localStorage.setItem('auth_token', user.id.toString());
+                // Don't overwrite token - it should be set separately via setToken
+                // Only update user in state, keep existing token
             },
 
             setToken: (token) => {

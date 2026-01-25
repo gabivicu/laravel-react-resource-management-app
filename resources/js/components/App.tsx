@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import Layout from './layout/Layout';
@@ -15,8 +16,45 @@ import UserList from './users/UserList';
 import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 
 function App() {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const { isAuthenticated, logout, setToken, setUser, setCurrentOrganization } = useAuthStore();
     const location = useLocation();
+
+    // Sync Zustand state with localStorage on mount
+    useEffect(() => {
+        const authToken = localStorage.getItem('auth_token');
+        const authStorage = localStorage.getItem('auth-storage');
+        
+        // If we have auth storage but Zustand says we're not authenticated, restore state
+        if (authStorage && authToken) {
+            try {
+                const authState = JSON.parse(authStorage);
+                if (authState.state?.isAuthenticated && authState.state?.token === authToken) {
+                    // Restore state from storage
+                    if (authState.state.user) {
+                        setUser(authState.state.user);
+                    }
+                    if (authState.state.token) {
+                        setToken(authState.state.token);
+                    }
+                    if (authState.state.currentOrganization) {
+                        setCurrentOrganization(authState.state.currentOrganization);
+                    }
+                } else if (authState.state?.token !== authToken) {
+                    // Token mismatch - clear state
+                    logout();
+                }
+            } catch (e) {
+                // Invalid storage, clear it
+                localStorage.removeItem('auth-storage');
+                if (!authToken) {
+                    logout();
+                }
+            }
+        } else if (!authToken && isAuthenticated) {
+            // Inconsistent state - clear it
+            logout();
+        }
+    }, [logout, setToken, setUser, setCurrentOrganization]);
 
     if (!isAuthenticated) {
         if (location.pathname === '/register') {

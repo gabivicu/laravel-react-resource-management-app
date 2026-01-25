@@ -129,6 +129,8 @@ Route::prefix('v1')->group(function () {
             Route::patch('users/{id}', [UserController::class, 'update']);
             Route::post('users/{id}/assign-role', [UserController::class, 'assignRole']);
             Route::post('users/{id}/remove-role', [UserController::class, 'removeRole']);
+            Route::post('users/avatar', [UserController::class, 'uploadAvatar']);
+            Route::delete('users/avatar', [UserController::class, 'removeAvatar']);
 
             // Roles - Write
             Route::post('roles', [RoleController::class, 'store']);

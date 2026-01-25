@@ -18,7 +18,10 @@
         "confirm": "Confirmă",
         "yes": "Da",
         "no": "Nu",
-        "scrollToLoadMore": "Derulează pentru a încărca mai multe"
+        "scrollToLoadMore": "Derulează pentru a încărca mai multe",
+        "upload": "Încarcă",
+        "remove": "Elimină",
+        "optional": "Opțional"
     },
     "auth": {
         "login": "Autentificare",
@@ -32,6 +35,8 @@
         "rememberMe": "Ține-mă minte",
         "alreadyHaveAccount": "Ai deja cont?",
         "dontHaveAccount": "Nu ai cont?",
+        "editProfile": "Editează Profilul",
+        "avatar": "Poza de Profil",
         "loginError": "Email sau parolă incorectă",
         "registerError": "Înregistrarea a eșuat",
         "loggingIn": "Se autentifică..."
@@ -244,5 +249,10 @@
         "byProject": "După Proiect:",
         "tasks": "sarcini",
         "noDataAvailable": "Nu există date disponibile"
+    },
+    "profile": {
+        "updateSuccess": "Profil actualizat cu succes",
+        "updateError": "Actualizarea profilului a eșuat",
+        "removeAvatarError": "Ștergerea avatarului a eșuat"
     }
 }
