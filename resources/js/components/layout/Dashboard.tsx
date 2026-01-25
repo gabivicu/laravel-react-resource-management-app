@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '@/services/analytics';
 import { projectService } from '@/services/projects';
@@ -34,6 +35,7 @@ const ResourceIcon = () => (
 );
 
 export default function Dashboard() {
+    const { t } = useTranslation();
     const { data: dashboardStats, isLoading: statsLoading } = useQuery({
         queryKey: ['analytics', 'dashboard'],
         queryFn: () => analyticsService.getDashboardStats(),
@@ -124,42 +126,42 @@ export default function Dashboard() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-                    <p className="text-gray-600 dark:text-gray-400 mt-1">Welcome back! Here&apos;s what&apos;s happening.</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.title')}</h1>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">{t('dashboard.welcomeBack')}</p>
                 </div>
                 <Link
                     to="/projects/create"
                     className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                 >
-                    + New Project
+                    + {t('dashboard.newProject')}
                 </Link>
             </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Projects"
+                    title={t('dashboard.projects')}
                     value={projectsCount}
                     icon={<ProjectIcon />}
                     color="blue"
                     link="/projects"
                 />
                 <StatCard
-                    title="Tasks"
+                    title={t('dashboard.tasks')}
                     value={tasksCount}
                     icon={<TaskIcon />}
                     color="green"
                     link="/tasks"
                 />
                 <StatCard
-                    title="Team Members"
+                    title={t('dashboard.teamMembers')}
                     value={usersCount}
                     icon={<UserIcon />}
                     color="purple"
                     link="/users"
                 />
                 <StatCard
-                    title="Active Allocations"
+                    title={t('dashboard.activeAllocations')}
                     value={allocationsCount}
                     icon={<ResourceIcon />}
                     color="orange"
@@ -171,17 +173,17 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Task Status Chart */}
                 {taskStatusData.length > 0 && (
-                    <MiniChart data={taskStatusData} title="Tasks by Status" />
+                    <MiniChart data={taskStatusData} title={t('dashboard.tasksByStatus')} />
                 )}
 
                 {/* Task Priority Chart */}
                 {taskPriorityData.length > 0 && (
-                    <MiniChart data={taskPriorityData} title="Tasks by Priority" />
+                    <MiniChart data={taskPriorityData} title={t('dashboard.tasksByPriority')} />
                 )}
 
                 {/* Project Status Chart */}
                 {projectStatusData.length > 0 && (
-                    <MiniChart data={projectStatusData} title="Projects by Status" />
+                    <MiniChart data={projectStatusData} title={t('dashboard.projectsByStatus')} />
                 )}
             </div>
 
@@ -189,23 +191,23 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Task Completion Progress */}
                 <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Task Progress</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.taskProgress')}</h3>
                     <div className="space-y-4">
                         <ProgressBar
-                            label="Completion Rate"
+                            label={t('dashboard.completionRate')}
                             value={completionRate}
                             max={100}
                             color="green"
                         />
                         <div className="pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 dark:text-gray-400">Estimated Hours</span>
+                                <span className="text-gray-600 dark:text-gray-400">{t('dashboard.estimatedHours')}</span>
                                 <span className="font-medium text-gray-900 dark:text-white">
                                     {totalEstimated.toFixed(1)}h
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 dark:text-gray-400">Actual Hours</span>
+                                <span className="text-gray-600 dark:text-gray-400">{t('dashboard.actualHours')}</span>
                                 <span className="font-medium text-gray-900 dark:text-white">
                                     {totalActual.toFixed(1)}h
                                 </span>

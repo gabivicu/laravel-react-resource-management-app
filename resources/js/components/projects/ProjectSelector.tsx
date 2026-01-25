@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '@/services/projects';
 import useDebounce from '@/hooks/useDebounce';
@@ -21,6 +22,7 @@ export default function ProjectSelector({
     disabled = false,
     initialProject 
 }: ProjectSelectorProps) {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProject, setSelectedProject] = useState<Project | null>(initialProject || null);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -147,6 +149,23 @@ export default function ProjectSelector({
         setShowSuggestions(true); // Re-open suggestions to allow new search
     };
 
+    const getStatusLabel = (status: string): string => {
+        switch (status) {
+            case 'planning':
+                return t('projects.statusPlanning');
+            case 'active':
+                return t('projects.statusActive');
+            case 'on_hold':
+                return t('projects.statusOnHold');
+            case 'completed':
+                return t('projects.statusCompleted');
+            case 'cancelled':
+                return t('projects.statusCancelled');
+            default:
+                return status;
+        }
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
         if (selectedProject && e.target.value !== selectedProject.name) {
@@ -169,7 +188,7 @@ export default function ProjectSelector({
                     onKeyDown={handleKeyDown}
                     onFocus={() => setShowSuggestions(true)}
                     disabled={disabled}
-                    placeholder="Search for a project..."
+                    placeholder={t('projects.searchProjects')}
                     className={`w-full px-3 py-2 border rounded-lg pr-8 ${
                         error ? 'border-red-500' : 'border-gray-300'
                     } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
@@ -209,7 +228,7 @@ export default function ProjectSelector({
                             >
                                 <span>{project.name}</span>
                                 <span className={`text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600`}>
-                                    {project.status}
+                                    {getStatusLabel(project.status)}
                                 </span>
                             </li>
                         ))}
@@ -219,7 +238,7 @@ export default function ProjectSelector({
             
             {showSuggestions && debouncedSearch.length > 1 && suggestions.length === 0 && !isLoading && !selectedProject && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-sm text-gray-500">
-                    No projects found.
+                    {t('projects.noProjectsFound')}
                 </div>
             )}
 

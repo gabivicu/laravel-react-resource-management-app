@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface RecentItem {
     id: number;
@@ -30,20 +31,68 @@ const statusColors: Record<string, string> = {
     urgent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-
-    return date.toLocaleDateString();
-}
-
 export default function RecentActivity({ items, type }: RecentActivityProps) {
+    const { t } = useTranslation();
+    
+    function formatDate(dateString: string): string {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (diffInSeconds < 60) return t('dashboard.justNow');
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}${t('dashboard.minutesAgo')}`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}${t('dashboard.hoursAgo')}`;
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}${t('dashboard.daysAgo')}`;
+
+        return date.toLocaleDateString();
+    }
+
+    const getStatusLabel = (status: string, itemType: 'project' | 'task'): string => {
+        if (itemType === 'project') {
+            switch (status) {
+                case 'planning':
+                    return t('projects.statusPlanning');
+                case 'active':
+                    return t('projects.statusActive');
+                case 'on_hold':
+                    return t('projects.statusOnHold');
+                case 'completed':
+                    return t('projects.statusCompleted');
+                case 'cancelled':
+                    return t('projects.statusCancelled');
+                default:
+                    return status.replace('_', ' ');
+            }
+        } else {
+            switch (status) {
+                case 'todo':
+                    return t('tasks.statusTodo');
+                case 'in_progress':
+                    return t('tasks.statusInProgress');
+                case 'review':
+                    return t('tasks.statusReview');
+                case 'done':
+                    return t('tasks.statusDone');
+                default:
+                    return status.replace('_', ' ');
+            }
+        }
+    };
+
+    const getPriorityLabel = (priority: string): string => {
+        switch (priority) {
+            case 'low':
+                return t('tasks.priorityLow');
+            case 'medium':
+                return t('tasks.priorityMedium');
+            case 'high':
+                return t('tasks.priorityHigh');
+            case 'urgent':
+                return t('tasks.priorityUrgent');
+            default:
+                return priority;
+        }
+    };
     const getLink = (item: RecentItem) => {
         if (item.type === 'project') {
             return `/projects/${item.id}/edit`;
@@ -55,19 +104,19 @@ export default function RecentActivity({ items, type }: RecentActivityProps) {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Recent {type === 'projects' ? 'Projects' : 'Tasks'}
+                    {type === 'projects' ? t('dashboard.recentProjects') : t('dashboard.recentTasks')}
                 </h3>
                 <Link
                     to={`/${type}`}
                     className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                    View all →
+                    {t('dashboard.viewAll')} →
                 </Link>
             </div>
             <div className="space-y-3">
                 {items.length === 0 ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                        No recent {type} found
+                        {type === 'projects' ? t('dashboard.noRecentProjects') : t('dashboard.noRecentTasks')}
                     </p>
                 ) : (
                     items.slice(0, 5).map((item) => (
@@ -86,14 +135,14 @@ export default function RecentActivity({ items, type }: RecentActivityProps) {
                                             <span
                                                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[item.status] || statusColors.planning}`}
                                             >
-                                                {item.status.replace('_', ' ')}
+                                                {getStatusLabel(item.status, item.type)}
                                             </span>
                                         )}
                                         {item.priority && (
                                             <span
                                                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[item.priority] || statusColors.medium}`}
                                             >
-                                                {item.priority}
+                                                {getPriorityLabel(item.priority)}
                                             </span>
                                         )}
                                     </div>

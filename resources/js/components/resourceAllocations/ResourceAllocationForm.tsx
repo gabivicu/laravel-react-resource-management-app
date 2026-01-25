@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { resourceAllocationService } from '@/services/resourceAllocations';
 import { userService } from '@/services/users';
 import { useState, useEffect } from 'react';
@@ -29,6 +30,7 @@ export default function ResourceAllocationForm({
     onSuccess, 
     onCancel 
 }: ResourceAllocationFormProps = {}) {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -129,7 +131,7 @@ export default function ResourceAllocationForm({
     };
 
     if (isEdit && isLoading) {
-        return <div className="p-8">Loading...</div>;
+        return <div className="p-8">{t('common.loading')}</div>;
     }
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
@@ -147,7 +149,7 @@ export default function ResourceAllocationForm({
         <form onSubmit={handleSubmit}>
             {/* Project */}
             <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Project *</label>
+                <label className="block text-sm font-medium mb-2">{t('resourceAllocations.projectLabel')} *</label>
                 <ProjectSelector
                     value={formData.project_id ? Number(formData.project_id) : undefined}
                     onChange={(id) => setFormData({ ...formData, project_id: id ? id.toString() : '' })}
@@ -161,7 +163,7 @@ export default function ResourceAllocationForm({
 
                 {/* User */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">User *</label>
+                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.userLabel')} *</label>
                     <select
                         value={formData.user_id}
                         onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
@@ -171,7 +173,7 @@ export default function ResourceAllocationForm({
                         required
                         disabled={isEdit}
                     >
-                        <option value="">Select a user</option>
+                        <option value="">{t('resourceAllocations.selectUser')}</option>
                         {users.map((user) => (
                             <option key={user.id} value={user.id}>
                                 {user.name} ({user.email})
@@ -185,7 +187,7 @@ export default function ResourceAllocationForm({
 
                 {/* Allocation Percentage */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Allocation Percentage *</label>
+                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.allocationPercentageLabel')} *</label>
                     <input
                         type="number"
                         step="0.1"
@@ -205,20 +207,20 @@ export default function ResourceAllocationForm({
 
                 {/* Role */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Role</label>
+                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.roleLabel')}</label>
                     <input
                         type="text"
                         value={formData.role}
                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg"
-                        placeholder="e.g., Developer, Designer"
+                        placeholder={t('resourceAllocations.rolePlaceholder')}
                     />
                 </div>
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label className="block text-sm font-medium mb-2">Start Date *</label>
+                        <label className="block text-sm font-medium mb-2">{t('resourceAllocations.startDate')} *</label>
                         <input
                             type="date"
                             value={formData.start_date}
@@ -228,7 +230,7 @@ export default function ResourceAllocationForm({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-2">End Date</label>
+                        <label className="block text-sm font-medium mb-2">{t('resourceAllocations.endDate')}</label>
                         <input
                             type="date"
                             value={formData.end_date}
@@ -240,7 +242,7 @@ export default function ResourceAllocationForm({
 
                 {/* Notes */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">Notes</label>
+                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.notesLabel')}</label>
                     <textarea
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -256,14 +258,14 @@ export default function ResourceAllocationForm({
                         disabled={isSubmitting}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                     >
-                        {isSubmitting ? 'Saving...' : isEdit ? 'Update Allocation' : 'Create Allocation'}
+                        {isSubmitting ? t('common.saving') : isEdit ? t('resourceAllocations.updateAllocation') : t('resourceAllocations.createAllocationButton')}
                     </button>
                     <button
                         type="button"
                         onClick={handleCancel}
                         className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </button>
                 </div>
             </form>

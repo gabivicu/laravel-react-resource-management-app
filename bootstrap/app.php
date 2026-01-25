@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Configure CORS for API
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
+            \App\Http\Middleware\SetLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

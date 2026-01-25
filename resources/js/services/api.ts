@@ -24,11 +24,12 @@ const api: AxiosInstance = axios.create({
     withCredentials: true,
 });
 
-// Request interceptor to add tenant ID and token
+// Request interceptor to add tenant ID, token, and language
 api.interceptors.request.use(
     (config) => {
         const tenantId = localStorage.getItem('tenant_id');
         const token = localStorage.getItem('auth_token');
+        const language = localStorage.getItem('i18nextLng') || 'en';
 
         if (tenantId) {
             config.headers['X-Tenant-ID'] = tenantId;
@@ -37,6 +38,9 @@ api.interceptors.request.use(
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
+
+        // Add language to request header
+        config.headers['Accept-Language'] = language;
 
         return config;
     },

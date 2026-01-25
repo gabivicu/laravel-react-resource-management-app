@@ -1,10 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/auth';
+import LanguageSelector from '../ui/LanguageSelector';
 
 interface HeaderProps {
     onMenuClick?: (e?: React.MouseEvent) => void;
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
+    const { t } = useTranslation();
     const authStore = useAuthStore();
     const user = authStore.user;
     const logout = authStore.logout;
@@ -42,13 +45,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
                         <span className="text-blue-600 text-sm sm:text-lg font-bold">RM</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h1 className="text-base sm:text-xl font-bold text-white truncate">Resource Management SaaS</h1>
+                        <h1 className="text-base sm:text-xl font-bold text-white truncate">{t('header.appName')}</h1>
                         {currentOrganization && (
                             <p className="text-xs sm:text-sm text-blue-100 truncate">{currentOrganization.name}</p>
                         )}
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                    <LanguageSelector />
                     <div className="hidden sm:flex items-center gap-3">
                         <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                             <span className="text-white text-sm font-medium">
@@ -61,7 +65,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
                         onClick={logout}
                         className="px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm bg-white text-blue-600 rounded-lg transition-all font-semibold hover:bg-gray-100 hover:shadow-md border border-white border-opacity-30 whitespace-nowrap"
                     >
-                        Logout
+                        {t('auth.logout')}
                     </button>
                 </div>
             </div>

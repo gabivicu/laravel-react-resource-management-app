@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { resourceAllocationService } from '@/services/resourceAllocations';
 import { projectService } from '@/services/projects';
 import { useState } from 'react';
@@ -6,6 +7,7 @@ import Modal from '@/components/ui/Modal';
 import ResourceAllocationForm from './ResourceAllocationForm';
 
 export default function ResourceAllocationList() {
+    const { t } = useTranslation();
     const [projectFilter, setProjectFilter] = useState<string>('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingAllocationId, setEditingAllocationId] = useState<number | null>(null);
@@ -34,7 +36,7 @@ export default function ResourceAllocationList() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500">Loading allocations...</div>
+                <div className="text-gray-500">{t('resourceAllocations.loadingAllocations')}</div>
             </div>
         );
     }
@@ -42,7 +44,7 @@ export default function ResourceAllocationList() {
     if (error) {
         return (
             <div className="p-4 bg-red-50 text-red-600 rounded">
-                Error loading allocations. Please try again.
+                {t('resourceAllocations.errorLoadingAllocations')}
             </div>
         );
     }
@@ -58,12 +60,12 @@ export default function ResourceAllocationList() {
     return (
         <div className="w-full">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Resource Allocations</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('resourceAllocations.title')}</h2>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
                     className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
                 >
-                    + New Allocation
+                    + {t('resourceAllocations.newAllocation')}
                 </button>
             </div>
 
@@ -74,7 +76,7 @@ export default function ResourceAllocationList() {
                     onChange={(e) => setProjectFilter(e.target.value)}
                     className="px-3 py-2 border rounded-lg"
                 >
-                    <option value="">All Projects</option>
+                    <option value="">{t('resourceAllocations.allProjects')}</option>
                     {projects.map((project) => (
                         <option key={project.id} value={project.id}>
                             {project.name}
@@ -86,12 +88,12 @@ export default function ResourceAllocationList() {
             {/* Allocations Table */}
             {allocations.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">No allocations found.</p>
+                    <p className="mb-4">{t('resourceAllocations.noAllocationsFound')}</p>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="text-blue-600 hover:text-blue-700"
                     >
-                        Create your first allocation
+                        {t('resourceAllocations.createFirstAllocation')}
                     </button>
                 </div>
             ) : (
@@ -101,12 +103,12 @@ export default function ResourceAllocationList() {
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Allocation</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.userLabel')}</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.projectLabel')}</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.allocation')}</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.roleLabel')}</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.period')}</th>
+                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
@@ -155,18 +157,18 @@ export default function ResourceAllocationList() {
                                                     onClick={() => openEditModal(allocation.id)}
                                                     className="text-blue-600 hover:text-blue-800"
                                                 >
-                                                    Edit
+                                                    {t('common.edit')}
                                                 </button>
                                                 <button
                                                     onClick={() => {
-                                                        if (confirm('Are you sure you want to delete this allocation?')) {
+                                                        if (confirm(t('common.confirm'))) {
                                                             deleteMutation.mutate(allocation.id);
                                                         }
                                                     }}
                                                     className="text-red-600 hover:text-red-800"
                                                     disabled={deleteMutation.isPending}
                                                 >
-                                                    {deleteMutation.isPending ? '...' : 'Delete'}
+                                                    {deleteMutation.isPending ? '...' : t('common.delete')}
                                                 </button>
                                             </div>
                                         </td>
@@ -194,29 +196,29 @@ export default function ResourceAllocationList() {
                                             onClick={() => openEditModal(allocation.id)}
                                             className="text-blue-600 hover:text-blue-800 text-sm"
                                         >
-                                            Edit
+                                            {t('common.edit')}
                                         </button>
                                         <button
                                             onClick={() => {
-                                                if (confirm('Are you sure you want to delete this allocation?')) {
+                                                if (confirm(t('common.confirm'))) {
                                                     deleteMutation.mutate(allocation.id);
                                                 }
                                             }}
                                             className="text-red-600 hover:text-red-800 text-sm"
                                             disabled={deleteMutation.isPending}
                                         >
-                                            {deleteMutation.isPending ? '...' : 'Delete'}
+                                            {deleteMutation.isPending ? '...' : t('common.delete')}
                                         </button>
                                     </div>
                                 </div>
                                 
                                 <div className="space-y-2 text-sm">
                                     <div>
-                                        <span className="font-medium text-gray-700">Project: </span>
+                                        <span className="font-medium text-gray-700">{t('resourceAllocations.projectLabel')}: </span>
                                         <span className="text-gray-600">{allocation.project?.name || 'N/A'}</span>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-700">Allocation: </span>
+                                        <span className="font-medium text-gray-700">{t('resourceAllocations.allocation')}: </span>
                                         <div className="flex items-center mt-1">
                                             <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
                                                 <div
@@ -229,12 +231,12 @@ export default function ResourceAllocationList() {
                                     </div>
                                     {allocation.role && (
                                         <div>
-                                            <span className="font-medium text-gray-700">Role: </span>
+                                            <span className="font-medium text-gray-700">{t('resourceAllocations.roleLabel')}: </span>
                                             <span className="text-gray-600">{allocation.role}</span>
                                         </div>
                                     )}
                                     <div>
-                                        <span className="font-medium text-gray-700">Period: </span>
+                                        <span className="font-medium text-gray-700">{t('resourceAllocations.period')}: </span>
                                         <span className="text-gray-600">
                                             {new Date(allocation.start_date).toLocaleDateString()}
                                             {allocation.end_date && ` - ${new Date(allocation.end_date).toLocaleDateString()}`}
@@ -251,7 +253,7 @@ export default function ResourceAllocationList() {
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                title="Create New Resource Allocation"
+                title={t('resourceAllocations.createAllocation')}
             >
                 <ResourceAllocationForm
                     onSuccess={() => setIsCreateModalOpen(false)}
@@ -266,7 +268,7 @@ export default function ResourceAllocationList() {
                     setIsEditModalOpen(false);
                     setEditingAllocationId(null);
                 }}
-                title="Edit Resource Allocation"
+                title={t('resourceAllocations.editAllocation')}
             >
                 {editingAllocationId && (
                     <ResourceAllocationForm

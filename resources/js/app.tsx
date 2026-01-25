@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/react';
 import App from './components/App';
 import { TenantProvider } from './contexts/TenantContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import './i18n/config';
 import './echo';
 
 // Initialize Sentry
