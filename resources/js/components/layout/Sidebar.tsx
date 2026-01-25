@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -7,6 +8,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
+    const { t } = useTranslation();
     const location = useLocation();
     const [showOverlay, setShowOverlay] = useState(false);
     
@@ -34,12 +36,12 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     }, [location.pathname, isOpen, onClose]);
 
     const navItems = [
-        { path: '/', label: 'Dashboard', icon: '📊' },
-        { path: '/projects', label: 'Projects', icon: '📁' },
-        { path: '/tasks', label: 'Tasks', icon: '✅' },
-        { path: '/resource-allocations', label: 'Resources', icon: '👥' },
-        { path: '/users', label: 'Users', icon: '👤' },
-        { path: '/analytics', label: 'Analytics', icon: '📈' },
+        { path: '/', label: t('navigation.dashboard'), icon: '📊' },
+        { path: '/projects', label: t('navigation.projects'), icon: '📁' },
+        { path: '/tasks', label: t('navigation.tasks'), icon: '✅' },
+        { path: '/resource-allocations', label: t('navigation.resourceAllocations'), icon: '👥' },
+        { path: '/users', label: t('navigation.users'), icon: '👤' },
+        { path: '/analytics', label: t('navigation.analytics'), icon: '📈' },
     ];
 
     function getLinkClassName(isActive: boolean): string {

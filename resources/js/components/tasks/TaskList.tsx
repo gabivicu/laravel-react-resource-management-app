@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { taskService, TaskListResponse } from '@/services/tasks';
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 import useDebounce from '@/hooks/useDebounce';
 import Modal from '@/components/ui/Modal';
@@ -24,10 +25,11 @@ const priorityColors = {
 };
 
 export default function TaskList() {
+    const { t } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [priorityFilter, setPriorityFilter] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState<string>('created_at');
+    const [sortBy, setSortBy] = useState<string>('title');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const debouncedSearch = useDebounce(searchQuery, 300);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -120,7 +122,7 @@ export default function TaskList() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500">Loading tasks...</div>
+                <div className="text-gray-500">{t('tasks.loadingTasks')}</div>
             </div>
         );
     }
@@ -128,29 +130,41 @@ export default function TaskList() {
     if (isError) {
         return (
             <div className="p-4 bg-red-50 text-red-600 rounded">
-                Error loading tasks. Please try again.
+                {t('tasks.errorLoadingTasks')}
             </div>
         );
     }
 
-    const tasks = data?.pages.flatMap((page) => page.data) || [];
+    // Flatten and deduplicate tasks to avoid duplicate keys
+    // Important: Maintain sort order from backend by processing pages in order
+    const allTasks = data?.pages.flatMap((page) => page.data) || [];
+    
+    // Deduplicate while preserving order (keep first occurrence)
+    const seenIds = new Set<number>();
+    const tasks = allTasks.filter((task) => {
+        if (seenIds.has(task.id)) {
+            return false; // Skip duplicates
+        }
+        seenIds.add(task.id);
+        return true;
+    });
 
     return (
         <div className="w-full">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Tasks</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('tasks.title')}</h2>
                 <div className="flex gap-2">
                     <Link
                         to="/tasks/kanban"
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                     >
-                        Kanban View
+                        {t('tasks.kanbanView')}
                     </Link>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
                     >
-                        + New Task
+                        + {t('tasks.newTask')}
                     </button>
                 </div>
             </div>
@@ -162,7 +176,7 @@ export default function TaskList() {
                     <input
                         ref={searchInputRef}
                         type="text"
-                        placeholder="Search tasks..."
+                        placeholder={t('tasks.searchTasks')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -198,11 +212,11 @@ export default function TaskList() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                    <option value="">All Statuses</option>
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="review">Review</option>
-                    <option value="done">Done</option>
+                    <option value="">{t('tasks.allStatuses')}</option>
+                    <option value="todo">{t('tasks.statusTodo')}</option>
+                    <option value="in_progress">{t('tasks.statusInProgress')}</option>
+                    <option value="review">{t('tasks.statusReview')}</option>
+                    <option value="done">{t('tasks.statusDone')}</option>
                 </select>
 
                 {/* Priority Filter */}
@@ -211,11 +225,11 @@ export default function TaskList() {
                     onChange={(e) => setPriorityFilter(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                    <option value="">All Priorities</option>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
+                    <option value="">{t('tasks.allPriorities')}</option>
+                    <option value="low">{t('tasks.priorityLow')}</option>
+                    <option value="medium">{t('tasks.priorityMedium')}</option>
+                    <option value="high">{t('tasks.priorityHigh')}</option>
+                    <option value="urgent">{t('tasks.priorityUrgent')}</option>
                 </select>
 
                 {/* Sort By */}
@@ -224,32 +238,32 @@ export default function TaskList() {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                    <option value="created_at">Sort by Date Created</option>
-                    <option value="title">Sort by Title</option>
-                    <option value="due_date">Sort by Due Date</option>
-                    <option value="priority">Sort by Priority</option>
-                    <option value="status">Sort by Status</option>
+                    <option value="title">{t('tasks.sortByTitle')}</option>
+                    <option value="created_at">{t('tasks.sortByCreatedDate')}</option>
+                    <option value="due_date">{t('tasks.sortByDueDate')}</option>
+                    <option value="priority">{t('tasks.sortByPriority')}</option>
+                    <option value="status">{t('tasks.sortByStatus')}</option>
                 </select>
 
                 {/* Sort Order */}
                 <button
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-1"
-                    title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                    title={sortOrder === 'asc' ? t('tasks.ascending') : t('tasks.descending')}
                 >
                     {sortOrder === 'asc' ? (
                         <>
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                             </svg>
-                            <span className="hidden sm:inline">Asc</span>
+                            <span className="hidden sm:inline">{t('tasks.ascending')}</span>
                         </>
                     ) : (
                         <>
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
                             </svg>
-                            <span className="hidden sm:inline">Desc</span>
+                            <span className="hidden sm:inline">{t('tasks.descending')}</span>
                         </>
                     )}
                 </button>
@@ -258,26 +272,26 @@ export default function TaskList() {
             {/* Tasks Table */}
             {tasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">No tasks found matching your criteria.</p>
-                    {(searchQuery || statusFilter || priorityFilter || sortBy !== 'created_at' || sortOrder !== 'desc') ? (
+                    <p className="mb-4">{t('tasks.noTasksFound')}</p>
+                    {(searchQuery || statusFilter || priorityFilter || sortBy !== 'title' || sortOrder !== 'desc') ? (
                         <button
                             onClick={() => {
                                 setSearchQuery('');
                                 setStatusFilter('');
                                 setPriorityFilter('');
-                                setSortBy('created_at');
+                                setSortBy('title');
                                 setSortOrder('desc');
                             }}
                             className="text-blue-600 hover:text-blue-700"
                         >
-                            Clear all filters
+                            {t('tasks.clearAllFilters')}
                         </button>
                     ) : (
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
                             className="text-blue-600 hover:text-blue-700"
                         >
-                            Create your first task
+                            {t('tasks.createFirstTask')}
                         </button>
                     )}
                 </div>
@@ -287,12 +301,12 @@ export default function TaskList() {
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('tasks.taskTitle')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('tasks.project')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('tasks.status')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('tasks.priority')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('tasks.dueDate')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
@@ -315,7 +329,10 @@ export default function TaskList() {
                                                     statusColors[task.status]
                                                 }`}
                                             >
-                                                {task.status.replace('_', ' ')}
+                                                {task.status === 'todo' && t('tasks.statusTodo')}
+                                                {task.status === 'in_progress' && t('tasks.statusInProgress')}
+                                                {task.status === 'review' && t('tasks.statusReview')}
+                                                {task.status === 'done' && t('tasks.statusDone')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -324,7 +341,10 @@ export default function TaskList() {
                                                     priorityColors[task.priority]
                                                 }`}
                                             >
-                                                {task.priority}
+                                                {task.priority === 'low' && t('tasks.priorityLow')}
+                                                {task.priority === 'medium' && t('tasks.priorityMedium')}
+                                                {task.priority === 'high' && t('tasks.priorityHigh')}
+                                                {task.priority === 'urgent' && t('tasks.priorityUrgent')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">
@@ -338,13 +358,13 @@ export default function TaskList() {
                                                     onClick={() => openEditModal(task.id)}
                                                     className="text-blue-600 hover:text-blue-800"
                                                 >
-                                                    Edit
+                                                    {t('common.edit')}
                                                 </button>
                                                 <button
                                                     onClick={() => openDeleteModal(task)}
                                                     className="text-red-600 hover:text-red-800"
                                                 >
-                                                    Delete
+                                                    {t('common.delete')}
                                                 </button>
                                             </div>
                                         </td>
@@ -357,11 +377,11 @@ export default function TaskList() {
                     {/* Infinite Scroll Sensor */}
                     <div ref={loadMoreRef} className="py-8 flex justify-center">
                         {isFetchingNextPage ? (
-                            <div className="text-gray-500 animate-pulse">Loading more tasks...</div>
+                            <div className="text-gray-500 animate-pulse">{t('tasks.loadingMoreTasks')}</div>
                         ) : hasNextPage ? (
-                            <div className="text-gray-400 text-sm">Scroll to load more</div>
+                            <div className="text-gray-400 text-sm">{t('tasks.scrollToLoadMore')}</div>
                         ) : (
-                            tasks.length > 0 && <div className="text-gray-400 text-sm">No more tasks to load</div>
+                            tasks.length > 0 && <div className="text-gray-400 text-sm">{t('tasks.noMoreTasks')}</div>
                         )}
                     </div>
                 </>
@@ -370,7 +390,7 @@ export default function TaskList() {
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={closeModals}
-                title="Create New Task"
+                title={t('tasks.createTask')}
             >
                 <TaskForm
                     onSuccess={closeModals}
@@ -381,7 +401,7 @@ export default function TaskList() {
             <Modal
                 isOpen={isEditModalOpen}
                 onClose={closeModals}
-                title="Edit Task"
+                title={t('tasks.editTask')}
             >
                 {editingTaskId && (
                     <TaskForm

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface StatCardProps {
     title: string;
@@ -31,6 +32,7 @@ const iconColorClasses = {
 };
 
 export default function StatCard({ title, value, icon, color, link, subtitle, trend }: StatCardProps) {
+    const { t } = useTranslation();
     const content = (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700 group">
             <div className="flex items-start justify-between mb-4">
@@ -53,7 +55,7 @@ export default function StatCard({ title, value, icon, color, link, subtitle, tr
             {link && (
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                        View all →
+                        {t('dashboard.viewAll')} →
                     </span>
                 </div>
             )}

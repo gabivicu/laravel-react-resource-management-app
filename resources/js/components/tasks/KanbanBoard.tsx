@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { taskService } from '@/services/tasks';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -7,12 +8,7 @@ import ProjectSelector from '@/components/projects/ProjectSelector';
 import Modal from '@/components/ui/Modal';
 import TaskForm from './TaskForm';
 
-const statusConfig = {
-    todo: { label: 'To Do', color: 'bg-gray-100', textColor: 'text-gray-800' },
-    in_progress: { label: 'In Progress', color: 'bg-blue-100', textColor: 'text-blue-800' },
-    review: { label: 'Review', color: 'bg-yellow-100', textColor: 'text-yellow-800' },
-    done: { label: 'Done', color: 'bg-green-100', textColor: 'text-green-800' },
-};
+// statusConfig will be created inside component to use translations
 
 const priorityColors = {
     low: 'bg-gray-200 text-gray-700',
@@ -26,8 +22,31 @@ interface KanbanBoardProps {
 }
 
 export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
+    
+    const statusConfig = {
+        todo: { label: t('tasks.statusTodo'), color: 'bg-gray-100', textColor: 'text-gray-800' },
+        in_progress: { label: t('tasks.statusInProgress'), color: 'bg-blue-100', textColor: 'text-blue-800' },
+        review: { label: t('tasks.statusReview'), color: 'bg-yellow-100', textColor: 'text-yellow-800' },
+        done: { label: t('tasks.statusDone'), color: 'bg-green-100', textColor: 'text-green-800' },
+    };
+
+    const getPriorityLabel = (priority: Task['priority']): string => {
+        switch (priority) {
+            case 'low':
+                return t('tasks.priorityLow');
+            case 'medium':
+                return t('tasks.priorityMedium');
+            case 'high':
+                return t('tasks.priorityHigh');
+            case 'urgent':
+                return t('tasks.priorityUrgent');
+            default:
+                return priority;
+        }
+    };
     
     const [selectedProjectId, setSelectedProjectId] = useState<string>(
         searchParams.get('project_id') || (initialProjectId ? initialProjectId.toString() : '')
@@ -148,7 +167,7 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
         return (
             <div>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Kanban Board</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">{t('kanban.title')}</h2>
                     <div className="flex gap-4 items-center w-full md:w-auto">
                         <div className="w-full md:w-64">
                             <ProjectSelector
@@ -164,8 +183,8 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                         <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        <p className="text-lg font-medium mb-2">Select a project</p>
-                        <p>Please select a project to view its Kanban board.</p>
+                        <p className="text-lg font-medium mb-2">{t('kanban.selectProject')}</p>
+                        <p>{t('kanban.selectProjectMessage')}</p>
                     </div>
                 </div>
             </div>
@@ -175,7 +194,7 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500">Loading tasks...</div>
+                <div className="text-gray-500">{t('kanban.loadingTasks')}</div>
             </div>
         );
     }
@@ -183,7 +202,7 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     if (isError) {
         return (
             <div className="p-4 bg-red-50 text-red-600 rounded">
-                Error loading Kanban board: {(error as Error).message || 'Unknown error'}
+                {t('kanban.errorLoading')}: {(error as Error).message || t('common.error')}
             </div>
         );
     }
@@ -198,7 +217,7 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     return (
         <div>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-gray-900">Kanban Board</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('kanban.title')}</h2>
                 <div className="flex gap-4 items-center w-full md:w-auto">
                     <div className="w-full md:w-64">
                         <ProjectSelector
@@ -211,7 +230,7 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                         onClick={() => setIsCreateModalOpen(true)}
                         className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
                     >
-                        + New Task
+                        + {t('kanban.newTask')}
                     </button>
                 </div>
             </div>
@@ -250,7 +269,7 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                                                 priorityColors[task.priority]
                                             }`}
                                         >
-                                            {task.priority}
+                                            {getPriorityLabel(task.priority)}
                                         </span>
                                     </div>
                                     
@@ -301,7 +320,7 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                title="Create New Task"
+                title={t('tasks.createTask')}
             >
                 <TaskForm
                     initialProjectId={selectedProjectId ? parseInt(selectedProjectId) : undefined}

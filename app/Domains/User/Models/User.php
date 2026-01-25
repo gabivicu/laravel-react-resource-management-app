@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'current_organization_id', // Currently selected organization by the user
         'is_super_admin',
+        'avatar',
     ];
 
     protected $hidden = [

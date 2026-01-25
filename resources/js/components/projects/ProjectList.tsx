@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { projectService, ProjectListResponse } from '@/services/projects';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Modal from '@/components/ui/Modal';
@@ -16,6 +17,7 @@ const statusColors = {
 };
 
 export default function ProjectList() {
+    const { t } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 300);
@@ -182,15 +184,32 @@ export default function ProjectList() {
 
     const projects = data?.pages.flatMap((page) => page.data) || [];
 
+    const getStatusLabel = (status: string): string => {
+        switch (status) {
+            case 'planning':
+                return t('projects.statusPlanning');
+            case 'active':
+                return t('projects.statusActive');
+            case 'on_hold':
+                return t('projects.statusOnHold');
+            case 'completed':
+                return t('projects.statusCompleted');
+            case 'cancelled':
+                return t('projects.statusCancelled');
+            default:
+                return status.replace('_', ' ');
+        }
+    };
+
     return (
         <div className="w-full">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t('projects.title')}</h2>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
                     className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md w-full sm:w-auto"
                 >
-                    + New Project
+                    + {t('projects.newProject')}
                 </button>
             </div>
 
@@ -202,7 +221,7 @@ export default function ProjectList() {
                         <input
                             ref={searchInputRef}
                             type="text"
-                            placeholder="Search projects..."
+                            placeholder={t('projects.searchProjects')}
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
@@ -278,12 +297,12 @@ export default function ProjectList() {
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                        <option value="">All Statuses</option>
-                        <option value="planning">Planning</option>
-                        <option value="active">Active</option>
-                        <option value="on_hold">On Hold</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="">{t('projects.allStatuses')}</option>
+                        <option value="planning">{t('projects.statusPlanning')}</option>
+                        <option value="active">{t('projects.statusActive')}</option>
+                        <option value="on_hold">{t('projects.statusOnHold')}</option>
+                        <option value="completed">{t('projects.statusCompleted')}</option>
+                        <option value="cancelled">{t('projects.statusCancelled')}</option>
                     </select>
                 </div>
             </div>
@@ -291,15 +310,15 @@ export default function ProjectList() {
             {/* Projects Grid */}
             {isLoading ? (
                 <div className="flex items-center justify-center p-8">
-                    <div className="text-gray-500">Loading projects...</div>
+                    <div className="text-gray-500">{t('common.loading')}</div>
                 </div>
             ) : isError ? (
                 <div className="p-4 bg-red-50 text-red-600 rounded">
-                    Error loading projects. Please try again.
+                    {t('common.error')}
                 </div>
             ) : projects.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">No projects found matching your criteria.</p>
+                    <p className="mb-4">{t('projects.noProjectsFound')}</p>
                     {searchQuery || statusFilter ? (
                         <button
                             onClick={() => {
@@ -308,14 +327,14 @@ export default function ProjectList() {
                             }}
                             className="text-blue-600 hover:text-blue-700"
                         >
-                            Clear filters
+                            {t('common.clear')}
                         </button>
                     ) : (
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
                             className="text-blue-600 hover:text-blue-700"
                         >
-                            Create your first project
+                            {t('projects.createFirstProject')}
                         </button>
                     )}
                 </div>
@@ -336,7 +355,7 @@ export default function ProjectList() {
                                             statusColors[project.status]
                                         }`}
                                     >
-                                        {project.status.replace('_', ' ')}
+                                        {getStatusLabel(project.status)}
                                     </span>
                                 </div>
 
@@ -348,13 +367,13 @@ export default function ProjectList() {
 
                                 <div className="flex gap-2 text-sm text-gray-500 mb-4">
                                     {project.start_date && (
-                                        <span>Start: {new Date(project.start_date).toLocaleDateString()}</span>
+                                        <span>{t('projects.startDate')}: {new Date(project.start_date).toLocaleDateString()}</span>
                                     )}
                                 </div>
 
                                 {project.budget && (
                                     <div className="text-sm font-medium mb-4">
-                                        Budget: ${project.budget.toLocaleString()}
+                                        {t('projects.budget')}: ${project.budget.toLocaleString()}
                                     </div>
                                 )}
 
@@ -363,24 +382,24 @@ export default function ProjectList() {
                                         onClick={() => openViewModal(project.id)}
                                         className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded text-center hover:bg-blue-100 transition-colors"
                                     >
-                                        View
+                                        {t('projects.viewProject')}
                                     </button>
                                     <button
                                         onClick={() => openEditModal(project.id)}
                                         className="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded text-center hover:bg-gray-100 transition-colors"
                                     >
-                                        Edit
+                                        {t('common.edit')}
                                     </button>
                                     <button
                                         onClick={() => {
-                                            if (confirm('Are you sure you want to delete this project?')) {
+                                            if (confirm(t('common.confirm'))) {
                                                 deleteMutation.mutate(project.id);
                                             }
                                         }}
                                         className="px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
                                         disabled={deleteMutation.isPending}
                                     >
-                                        {deleteMutation.isPending ? '...' : 'Delete'}
+                                        {deleteMutation.isPending ? '...' : t('common.delete')}
                                     </button>
                                 </div>
                             </div>
@@ -390,11 +409,11 @@ export default function ProjectList() {
                     {/* Infinite Scroll Sensor */}
                     <div ref={loadMoreRef} className="py-8 flex justify-center">
                         {isFetchingNextPage ? (
-                            <div className="text-gray-500 animate-pulse">Loading more projects...</div>
+                            <div className="text-gray-500 animate-pulse">{t('common.loading')}</div>
                         ) : hasNextPage ? (
-                            <div className="text-gray-400 text-sm">Scroll to load more</div>
+                            <div className="text-gray-400 text-sm">{t('common.scrollToLoadMore')}</div>
                         ) : (
-                            projects.length > 0 && <div className="text-gray-400 text-sm">No more projects to load</div>
+                            projects.length > 0 && <div className="text-gray-400 text-sm">{t('projects.noMoreProjects')}</div>
                         )}
                     </div>
                 </>
@@ -404,7 +423,7 @@ export default function ProjectList() {
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={closeModals}
-                title="Create New Project"
+                title={t('projects.createProject')}
             >
                 <ProjectForm
                     onSuccess={closeModals}
@@ -416,7 +435,7 @@ export default function ProjectList() {
             <Modal
                 isOpen={isEditModalOpen}
                 onClose={closeModals}
-                title="Edit Project"
+                title={t('projects.editProject')}
             >
                 {editingProjectId && (
                     <ProjectForm

@@ -87,19 +87,26 @@ class TaskRepository extends BaseRepository implements RepositoryInterface
         // Sorting
         $sortBy = $filters['sort_by'] ?? 'created_at';
         $sortOrder = $filters['sort_order'] ?? 'desc';
-        
+
         // Validate sort options
         $allowedSortBy = ['created_at', 'title', 'due_date', 'priority', 'status', 'order'];
         $allowedSortOrder = ['asc', 'desc'];
-        
-        if (!in_array($sortBy, $allowedSortBy)) {
+
+        if (! in_array($sortBy, $allowedSortBy)) {
             $sortBy = 'created_at';
         }
-        if (!in_array($sortOrder, $allowedSortOrder)) {
+        if (! in_array($sortOrder, $allowedSortOrder)) {
             $sortOrder = 'desc';
         }
 
-        return $query->with(['project', 'assignees'])->orderBy($sortBy, $sortOrder)->paginate($perPage);
+        // Apply sorting - use standard orderBy for all fields including title
+        $query->orderBy($sortBy, $sortOrder);
+        // Add secondary sort by id for consistent ordering
+        if ($sortBy !== 'id') {
+            $query->orderBy('id', $sortOrder);
+        }
+
+        return $query->with(['project', 'assignees'])->paginate($perPage);
     }
 
     /**

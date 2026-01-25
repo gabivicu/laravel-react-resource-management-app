@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { projectService } from '@/services/projects';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -20,6 +21,7 @@ interface ProjectFormProps {
 }
 
 export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectFormProps) {
+    const { t } = useTranslation();
     const { id: routeId } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -150,14 +152,14 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
     };
 
     if (isEdit && isLoading) {
-        return <div className="p-8 text-center">Loading...</div>;
+        return <div className="p-8 text-center">{t('projects.loading')}</div>;
     }
 
     if (isEdit && projectError) {
         return (
             <div className="p-8">
                 <div className="bg-red-50 text-red-600 rounded p-4">
-                    Error loading project: {projectError instanceof Error ? projectError.message : 'Unknown error'}
+                    {t('projects.errorLoading')}: {projectError instanceof Error ? projectError.message : t('common.error')}
                 </div>
             </div>
         );
@@ -170,7 +172,7 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
         <form onSubmit={handleSubmit} className={isInModal ? "" : "bg-white p-6 rounded-lg shadow"}>
                 {/* Name */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Project Name *</label>
+                    <label className="block text-sm font-medium mb-2">{t('projects.nameLabel')} *</label>
                     <input
                         type="text"
                         value={formData.name}
@@ -187,37 +189,37 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
 
                 {/* Description */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Description</label>
+                    <label className="block text-sm font-medium mb-2">{t('projects.description')}</label>
                     <textarea
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         rows={4}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        placeholder="Enter project description..."
+                        placeholder={t('projects.descriptionPlaceholder')}
                     />
                 </div>
 
                 {/* Status */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Status *</label>
+                    <label className="block text-sm font-medium mb-2">{t('projects.status')} *</label>
                     <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as Project['status'] })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                         required
                     >
-                        <option value="planning">Planning</option>
-                        <option value="active">Active</option>
-                        <option value="on_hold">On Hold</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="planning">{t('projects.statusPlanning')}</option>
+                        <option value="active">{t('projects.statusActive')}</option>
+                        <option value="on_hold">{t('projects.statusOnHold')}</option>
+                        <option value="completed">{t('projects.statusCompleted')}</option>
+                        <option value="cancelled">{t('projects.statusCancelled')}</option>
                     </select>
                 </div>
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label className="block text-sm font-medium mb-2">Start Date</label>
+                        <label className="block text-sm font-medium mb-2">{t('projects.startDate')}</label>
                         <input
                             type="date"
                             value={formData.start_date}
@@ -226,7 +228,7 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-2">End Date</label>
+                        <label className="block text-sm font-medium mb-2">{t('projects.endDate')}</label>
                         <input
                             type="date"
                             value={formData.end_date}
@@ -238,7 +240,7 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
 
                 {/* Budget */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">Budget</label>
+                    <label className="block text-sm font-medium mb-2">{t('projects.budget')}</label>
                     <input
                         type="number"
                         step="0.01"
@@ -246,7 +248,7 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
                         value={formData.budget}
                         onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        placeholder="0.00"
+                        placeholder={t('projects.budgetPlaceholder')}
                     />
                 </div>
 
@@ -257,14 +259,14 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
                         disabled={isSubmitting}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
                     >
-                        {isSubmitting ? 'Saving...' : isEdit ? 'Update Project' : 'Create Project'}
+                        {isSubmitting ? t('projects.saving') : isEdit ? t('projects.updateProject') : t('projects.createProjectButton')}
                     </button>
                     <button
                         type="button"
                         onClick={handleCancel}
                         className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </button>
                 </div>
             </form>
@@ -277,7 +279,7 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
     return (
         <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-6">
-                {isEdit ? 'Edit Project' : 'Create New Project'}
+                {isEdit ? t('projects.editProject') : t('projects.createProject')}
             </h2>
             {formContent}
         </div>

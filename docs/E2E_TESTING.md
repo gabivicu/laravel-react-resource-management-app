@@ -97,6 +97,24 @@ cypress/
 
 ## 🎯 Teste Disponibile
 
+### Rate Limiting Tests
+
+Teste pentru verificarea funcționalității de rate limiting și securitate API:
+
+```bash
+# Rulează doar testele de rate limiting
+npx cypress run --spec "cypress/e2e/rate-limiting.cy.ts"
+```
+
+**Teste incluse:**
+- ✅ Rate limiting pe endpoint-uri de autentificare (login/register)
+- ✅ Rate limiting pe operații de scriere (POST/PUT/DELETE)
+- ✅ Rate limiting pe operații de citire (GET)
+- ✅ Verificare headers de rate limiting
+- ✅ Verificare blocare automată după multiple violări
+
+**Notă**: Testele de rate limiting pot lua mai mult timp deoarece simulează multiple cereri consecutive.
+
 ### Critical Path Test
 
 Testul principal (`critical-path.cy.ts`) verifică fluxul complet:

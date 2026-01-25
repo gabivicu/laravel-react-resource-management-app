@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domains\User\Services\UserService;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 
 class UserController extends BaseController
@@ -60,11 +61,52 @@ class UserController extends BaseController
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'email', 'unique:users,email,'.$id],
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
+            'avatar' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'], // 5MB max
         ]);
 
-        $user = $this->userService->update($id, $request->only(['name', 'email', 'password']));
+        $data = $request->only(['name', 'email', 'password']);
+
+        // Handle avatar upload if present
+        if ($request->hasFile('avatar')) {
+            $data['avatar'] = $this->userService->uploadAvatar($id, $request->file('avatar'));
+        } elseif ($request->has('avatar') && $request->input('avatar') === null) {
+            // Remove avatar if explicitly set to null
+            $data['avatar'] = null;
+        }
+
+        $user = $this->userService->update($id, $data);
 
         return $this->success($user, 'User updated successfully');
+    }
+
+    /**
+     * Upload avatar for the authenticated user
+     */
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:5120'], // 5MB max
+        ]);
+
+        $user = $request->user();
+        $this->userService->uploadAvatar($user->id, $request->file('avatar'));
+
+        $user = $this->userService->find($user->id);
+
+        return $this->success(new UserResource($user), 'Avatar uploaded successfully');
+    }
+
+    /**
+     * Remove avatar for the authenticated user
+     */
+    public function removeAvatar(Request $request)
+    {
+        $user = $request->user();
+        $this->userService->removeAvatar($user->id);
+
+        $user = $this->userService->find($user->id);
+
+        return $this->success(new UserResource($user), 'Avatar removed successfully');
     }
 
     /**

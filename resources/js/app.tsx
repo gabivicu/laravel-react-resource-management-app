@@ -3,10 +3,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import * as Sentry from '@sentry/react';
 import App from './components/App';
 import { TenantProvider } from './contexts/TenantContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import './i18n/config';
 import './echo';
 
 // Initialize Sentry
@@ -60,6 +63,18 @@ root.render(
                 <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
                     <TenantProvider>
                         <App />
+                        <ToastContainer
+                            position="top-right"
+                            autoClose={3000}
+                            hideProgressBar={false}
+                            newestOnTop={false}
+                            closeOnClick
+                            rtl={false}
+                            pauseOnFocusLoss
+                            draggable
+                            pauseOnHover
+                            theme="light"
+                        />
                     </TenantProvider>
                 </BrowserRouter>
             </QueryClientProvider>

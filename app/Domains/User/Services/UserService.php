@@ -4,9 +4,11 @@ namespace App\Domains\User\Services;
 
 use App\Domains\Organization\Models\Organization;
 use App\Domains\User\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserService
 {
@@ -73,9 +75,69 @@ class UserService
             $updateData['password'] = Hash::make($data['password']);
         }
 
+        if (isset($data['avatar'])) {
+            $updateData['avatar'] = $data['avatar'];
+        }
+
         $user->update($updateData);
 
         return $user->load(['organizations']);
+    }
+
+    /**
+     * Upload avatar for user
+     */
+    public function uploadAvatar(int $userId, UploadedFile $file): string
+    {
+        $user = User::findOrFail($userId);
+
+        // Delete old avatar if exists
+        if ($user->avatar) {
+            $this->removeAvatar($userId);
+        }
+
+        // Generate unique filename
+        $filename = 'avatars/'.$userId.'_'.time().'.'.$file->getClientOriginalExtension();
+
+        // Store file in public disk
+        $path = $file->storeAs('avatars', $userId.'_'.time().'.'.$file->getClientOriginalExtension(), 'public');
+
+        // Get public URL
+        $relativeUrl = Storage::disk('public')->url($path);
+
+        // Make URL absolute if it's relative
+        $url = $relativeUrl;
+        if (! str_starts_with($url, 'http')) {
+            $appUrl = rtrim(config('app.url'), '/');
+            $url = $appUrl.$relativeUrl;
+        }
+
+        // Update user avatar
+        $user->update(['avatar' => $url]);
+
+        return $url;
+    }
+
+    /**
+     * Remove avatar for user
+     */
+    public function removeAvatar(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        if ($user->avatar) {
+            // Extract filename from URL (remove /storage/ prefix and any query params)
+            $urlPath = parse_url($user->avatar, PHP_URL_PATH);
+            $filename = str_replace('/storage/', '', $urlPath);
+
+            // Delete file from storage
+            if ($filename && Storage::disk('public')->exists($filename)) {
+                Storage::disk('public')->delete($filename);
+            }
+
+            // Clear avatar from user
+            $user->update(['avatar' => null]);
+        }
     }
 
     /**

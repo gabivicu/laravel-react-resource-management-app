@@ -57,7 +57,7 @@ describe('TaskForm', () => {
 
         await waitFor(() => {
             expect(screen.getByText('Create New Task')).toBeInTheDocument();
-            expect(screen.getByPlaceholderText(/search for a project/i)).toBeInTheDocument();
+            expect(screen.getByPlaceholderText(/search projects/i)).toBeInTheDocument();
             expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
         });
     });

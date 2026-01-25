@@ -1,10 +1,12 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { userService, UserListResponse } from '@/services/users';
 import { roleService } from '@/services/roles';
 import { useState, useEffect } from 'react';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 
 export default function UserList() {
+    const { t } = useTranslation();
     const [searchFilter, setSearchFilter] = useState<string>('');
     const queryClient = useQueryClient();
 
@@ -63,7 +65,7 @@ export default function UserList() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500">Loading users...</div>
+                <div className="text-gray-500">{t('users.loadingUsers')}</div>
             </div>
         );
     }
@@ -73,13 +75,13 @@ export default function UserList() {
 
     return (
         <div className="w-full">
-            <h2 className="text-2xl font-bold mb-6">User Management</h2>
+            <h2 className="text-2xl font-bold mb-6">{t('users.title')}</h2>
 
             {/* Search */}
             <div className="mb-4">
                 <input
                     type="text"
-                    placeholder="Search users..."
+                    placeholder={t('users.searchUsers')}
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
                     className="px-3 py-2 border rounded-lg w-full max-w-md"
@@ -89,7 +91,7 @@ export default function UserList() {
             {/* Users Table */}
             {users.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                    <p>No users found.</p>
+                    <p>{t('users.noUsersFound')}</p>
                 </div>
             ) : (
                 <>
@@ -97,10 +99,10 @@ export default function UserList() {
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('users.name')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('users.email')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('users.role')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
@@ -124,7 +126,7 @@ export default function UserList() {
                                                 // The original code didn't set value={...} so it's uncontrolled or defaults to "No Role" visually.
                                                 defaultValue="" 
                                             >
-                                                <option value="">No Role</option>
+                                                <option value="">{t('users.noRole')}</option>
                                                 {roles.map((role) => (
                                                     <option key={role.id} value={role.id}>
                                                         {role.name}
@@ -134,7 +136,7 @@ export default function UserList() {
                                         </td>
                                         <td className="px-6 py-4 text-sm">
                                             <button className="text-blue-600 hover:text-blue-800">
-                                                Edit
+                                                {t('users.edit')}
                                             </button>
                                         </td>
                                     </tr>
@@ -146,11 +148,11 @@ export default function UserList() {
                     {/* Infinite Scroll Sensor */}
                     <div ref={loadMoreRef} className="py-8 flex justify-center">
                         {isFetchingNextPage ? (
-                            <div className="text-gray-500 animate-pulse">Loading more users...</div>
+                            <div className="text-gray-500 animate-pulse">{t('users.loadingMoreUsers')}</div>
                         ) : hasNextPage ? (
-                            <div className="text-gray-400 text-sm">Scroll to load more</div>
+                            <div className="text-gray-400 text-sm">{t('common.scrollToLoadMore')}</div>
                         ) : (
-                            users.length > 0 && <div className="text-gray-400 text-sm">No more users to load</div>
+                            users.length > 0 && <div className="text-gray-400 text-sm">{t('users.noMoreUsers')}</div>
                         )}
                     </div>
                 </>
