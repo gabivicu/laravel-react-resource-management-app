@@ -49,6 +49,17 @@ test: ## Run tests (creates test database if needed)
 	@echo "Running tests..."
 	docker-compose exec -e DB_CONNECTION=pgsql -e DB_HOST=postgres -e DB_PORT=5432 -e DB_DATABASE=resource_management_test -e DB_USERNAME=postgres -e DB_PASSWORD=postgres app php artisan test
 
+test-e2e: ## Run E2E tests with Cypress (headless)
+	docker-compose run --rm cypress
+
+test-e2e-open: ## Open Cypress Test Runner (interactive)
+	@echo "Cypress open is not supported in Docker. Run locally:"
+	@echo "  npm run test:e2e:open"
+
+test-e2e-headed: ## Run E2E tests with visible browser
+	@echo "Headed Cypress is not supported in Docker. Run locally:"
+	@echo "  npm run test:e2e:headed"
+
 queue: ## Run queue worker
 	docker-compose exec queue php artisan queue:work
 

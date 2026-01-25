@@ -33,6 +33,11 @@ docker-compose.override.yml
 .phpunit.cache
 coverage/
 
+# Cypress
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+
 # IDE
 .idea/
 .vscode/

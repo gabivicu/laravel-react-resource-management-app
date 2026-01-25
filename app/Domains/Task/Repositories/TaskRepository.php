@@ -77,13 +77,29 @@ class TaskRepository extends BaseRepository implements RepositoryInterface
         }
 
         if (isset($filters['search'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('title', 'like', '%'.$filters['search'].'%')
-                    ->orWhere('description', 'like', '%'.$filters['search'].'%');
+            $searchTerm = strtolower($filters['search']);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(title) LIKE ?', ['%'.$searchTerm.'%'])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ['%'.$searchTerm.'%']);
             });
         }
 
-        return $query->with(['project', 'assignees'])->orderBy('order')->paginate($perPage);
+        // Sorting
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortOrder = $filters['sort_order'] ?? 'desc';
+        
+        // Validate sort options
+        $allowedSortBy = ['created_at', 'title', 'due_date', 'priority', 'status', 'order'];
+        $allowedSortOrder = ['asc', 'desc'];
+        
+        if (!in_array($sortBy, $allowedSortBy)) {
+            $sortBy = 'created_at';
+        }
+        if (!in_array($sortOrder, $allowedSortOrder)) {
+            $sortOrder = 'desc';
+        }
+
+        return $query->with(['project', 'assignees'])->orderBy($sortBy, $sortOrder)->paginate($perPage);
     }
 
     /**

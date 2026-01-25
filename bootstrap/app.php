@@ -24,5 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Report exceptions to Sentry (if installed and configured)
+        $exceptions->report(function (\Throwable $e) {
+            if (app()->bound('sentry')) {
+                app('sentry')->captureException($e);
+            }
+        });
     })->create();

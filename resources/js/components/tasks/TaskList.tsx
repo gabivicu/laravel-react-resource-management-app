@@ -1,8 +1,9 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService, TaskListResponse } from '@/services/tasks';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
+import useDebounce from '@/hooks/useDebounce';
 import Modal from '@/components/ui/Modal';
 import TaskForm from './TaskForm';
 import TaskDeleteModal from './TaskDeleteModal';
@@ -25,6 +26,12 @@ const priorityColors = {
 export default function TaskList() {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [priorityFilter, setPriorityFilter] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState<string>('created_at');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const debouncedSearch = useDebounce(searchQuery, 300);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    
     const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -43,11 +50,14 @@ export default function TaskList() {
         isLoading,
         isError,
     } = useInfiniteQuery<TaskListResponse>({
-        queryKey: ['tasks', statusFilter, priorityFilter],
+        queryKey: ['tasks', statusFilter, priorityFilter, debouncedSearch, sortBy, sortOrder],
         queryFn: ({ pageParam }) => taskService.getTasks(
             {
                 ...(statusFilter ? { status: statusFilter as any } : {}),
                 ...(priorityFilter ? { priority: priorityFilter as any } : {}),
+                ...(debouncedSearch ? { search: debouncedSearch } : {}),
+                sort_by: sortBy as any,
+                sort_order: sortOrder,
             },
             pageParam as number
         ),
@@ -145,12 +155,48 @@ export default function TaskList() {
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className="mb-4 flex gap-2">
+            {/* Filters & Search */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Search tasks..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <svg
+                        className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                    </svg>
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                        >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
+
+                {/* Status Filter */}
                 <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border rounded-lg"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                     <option value="">All Statuses</option>
                     <option value="todo">To Do</option>
@@ -158,10 +204,12 @@ export default function TaskList() {
                     <option value="review">Review</option>
                     <option value="done">Done</option>
                 </select>
+
+                {/* Priority Filter */}
                 <select
                     value={priorityFilter}
                     onChange={(e) => setPriorityFilter(e.target.value)}
-                    className="px-3 py-2 border rounded-lg"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                     <option value="">All Priorities</option>
                     <option value="low">Low</option>
@@ -169,18 +217,69 @@ export default function TaskList() {
                     <option value="high">High</option>
                     <option value="urgent">Urgent</option>
                 </select>
+
+                {/* Sort By */}
+                <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                    <option value="created_at">Sort by Date Created</option>
+                    <option value="title">Sort by Title</option>
+                    <option value="due_date">Sort by Due Date</option>
+                    <option value="priority">Sort by Priority</option>
+                    <option value="status">Sort by Status</option>
+                </select>
+
+                {/* Sort Order */}
+                <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex items-center gap-1"
+                    title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                >
+                    {sortOrder === 'asc' ? (
+                        <>
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                            </svg>
+                            <span className="hidden sm:inline">Asc</span>
+                        </>
+                    ) : (
+                        <>
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                            </svg>
+                            <span className="hidden sm:inline">Desc</span>
+                        </>
+                    )}
+                </button>
             </div>
 
             {/* Tasks Table */}
             {tasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">No tasks found.</p>
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="text-blue-600 hover:text-blue-700"
-                    >
-                        Create your first task
-                    </button>
+                    <p className="mb-4">No tasks found matching your criteria.</p>
+                    {(searchQuery || statusFilter || priorityFilter || sortBy !== 'created_at' || sortOrder !== 'desc') ? (
+                        <button
+                            onClick={() => {
+                                setSearchQuery('');
+                                setStatusFilter('');
+                                setPriorityFilter('');
+                                setSortBy('created_at');
+                                setSortOrder('desc');
+                            }}
+                            className="text-blue-600 hover:text-blue-700"
+                        >
+                            Clear all filters
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="text-blue-600 hover:text-blue-700"
+                        >
+                            Create your first task
+                        </button>
+                    )}
                 </div>
             ) : (
                 <>

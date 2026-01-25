@@ -178,8 +178,10 @@ The application runs the following services:
 - **node**: Node.js container for Vite
 - **postgres**: PostgreSQL database (port 5432)
 - **redis**: Redis cache (port 6379)
+- **reverb**: Laravel Reverb WebSocket server
 - **queue**: Laravel queue worker
 - **scheduler**: Laravel task scheduler
+- **cypress**: Cypress E2E test runner (optional, for testing)
 
 #### Useful Docker Commands
 
@@ -371,6 +373,8 @@ Additional demo users are created by `UserSeeder` - check the seeder file for de
 
 ## 🧪 Testing
 
+The application includes comprehensive testing at multiple levels:
+
 ### Backend Tests
 
 Backend tests use **PHPUnit** and are located in `tests/` directory:
@@ -475,12 +479,68 @@ describe('Component', () => {
 });
 ```
 
+### End-to-End (E2E) Tests
+
+E2E tests use **Cypress** to simulate real user workflows:
+
+- **Critical Path Tests** (`cypress/e2e/`): Test complete user flows (login → create project → create task → verify)
+- **Docker-based**: Tests run in a dedicated Cypress container for consistency
+
+#### Running E2E Tests
+
+```bash
+# Run E2E tests (Docker - recommended)
+make test-e2e
+# or
+docker compose run --rm cypress
+
+# Run E2E tests locally (requires Node.js)
+npm run test:e2e
+
+# Open Cypress Test Runner (interactive, local only)
+npm run test:e2e:open
+```
+
+#### E2E Test Structure
+
+The E2E tests cover critical user flows:
+- User authentication (login/logout)
+- Project creation and management
+- Task creation and verification
+- Search and filtering functionality
+
+See [docs/E2E_TESTING.md](docs/E2E_TESTING.md) for detailed documentation.
+
 ### Test Coverage Goals
 
 - **Backend**: Aim for >80% code coverage
 - **Frontend**: Aim for >70% code coverage
+- **E2E**: Critical user paths covered
 
 ## 🔧 Configuration
+
+### Monitoring & Observability
+
+The application includes **Sentry** integration for real-time error tracking and performance monitoring:
+
+- **Backend Error Tracking**: Captures PHP exceptions and errors
+- **Frontend Error Tracking**: Captures JavaScript errors with React Error Boundary
+- **Performance Monitoring**: Tracks API response times and database queries
+- **Session Replay**: Records user sessions for debugging (configurable)
+
+#### Setting Up Sentry
+
+1. Create a Sentry account at https://sentry.io
+2. Create a new project and get your DSN
+3. Add to `.env`:
+   ```env
+   SENTRY_LARAVEL_DSN=https://your-key@sentry.io/your-project-id
+   SENTRY_DSN=https://your-key@sentry.io/your-project-id  # For frontend
+   VITE_SENTRY_DSN=https://your-key@sentry.io/your-project-id
+   SENTRY_ENVIRONMENT=local  # or production, staging, etc.
+   ```
+
+See [docs/SENTRY_SETUP.md](docs/SENTRY_SETUP.md) for detailed setup instructions.
 
 ### Multi-Tenancy
 
@@ -684,12 +744,45 @@ laravel-react-app/
 └── vite.config.js               # Vite configuration
 ```
 
+## ✨ Key Features
+
+### User Interface & Experience
+
+- **🔍 Advanced Search**: Case-insensitive search for projects and tasks with autocomplete suggestions
+- **📊 Kanban Board**: Visual task management with drag-and-drop, real-time updates via WebSockets
+- **📱 Responsive Design**: Fully responsive layout optimized for mobile, tablet, and desktop
+- **🎨 Modern UI**: Clean, intuitive interface built with Tailwind CSS
+- **⌨️ Keyboard Navigation**: Full keyboard support for search and navigation
+- **🔄 Real-time Updates**: Live updates via Laravel Reverb WebSockets
+
+### Task Management
+
+- **📋 Task List View**: Table view with sorting (by date, title, priority, status) and filtering
+- **📊 Kanban View**: Visual board with columns for different task statuses
+- **🔍 Search & Filter**: Search tasks by title/description, filter by status and priority
+- **📅 Sorting Options**: Sort by creation date, title (alphabetical), due date, priority, or status
+- **✅ Confirmation Modals**: Safe deletion with confirmation dialogs showing task details
+
+### Project Management
+
+- **🔍 Project Search**: Search projects by name or description with autocomplete
+- **📊 Project Details**: View project information, tasks, and resource allocations
+- **🔗 Quick Navigation**: Direct links from projects to Kanban board filtered by project
+
+### Developer Experience
+
+- **🧪 Comprehensive Testing**: Unit, integration, and E2E tests
+- **📊 Error Monitoring**: Real-time error tracking with Sentry
+- **🔍 Code Quality**: Pre-commit hooks for code style and type checking
+- **📝 Type Safety**: Full TypeScript coverage for frontend code
+
 ## 📦 Technology Stack
 
 - **Backend**: Laravel 12, PostgreSQL, Redis
 - **Frontend**: React 18, TypeScript, Vite, TanStack Query, Zustand
-- **Real-time**: Laravel Reverb (configured)
-- **Testing**: PHPUnit (backend), Vitest + RTL (frontend)
+- **Real-time**: Laravel Reverb (WebSockets), Laravel Echo, Pusher-js
+- **Testing**: PHPUnit (backend), Vitest + RTL (frontend), Cypress (E2E)
+- **Monitoring**: Sentry (error tracking & performance monitoring)
 - **Containerization**: Docker & Docker Compose
 - **Web Server**: Nginx (Docker) or PHP built-in server (local)
 
@@ -783,7 +876,19 @@ See [docs/PRE_COMMIT.md](docs/PRE_COMMIT.md) for detailed documentation.
 
 ## 📚 Additional Resources
 
+### Documentation
+
+- [E2E Testing Guide](docs/E2E_TESTING.md) - Complete guide for Cypress E2E tests
+- [Sentry Setup Guide](docs/SENTRY_SETUP.md) - Error monitoring and observability setup
+- [Sentry Local Setup](docs/SENTRY_LOCAL_SETUP.md) - Quick local Sentry configuration
+- [Pre-Commit Hooks](docs/PRE_COMMIT.md) - Code quality automation
+- [Policies & Gates](docs/POLICIES_GATES.md) - Authorization documentation
+
+### External Resources
+
 - [Laravel Documentation](https://laravel.com/docs)
 - [React Documentation](https://react.dev)
 - [Vite Documentation](https://vitejs.dev)
 - [TanStack Query Documentation](https://tanstack.com/query/latest)
+- [Cypress Documentation](https://docs.cypress.io)
+- [Sentry Documentation](https://docs.sentry.io)
