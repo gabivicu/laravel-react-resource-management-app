@@ -43,7 +43,7 @@ function App() {
                     // Token mismatch - clear state
                     logout();
                 }
-            } catch (e) {
+            } catch {
                 // Invalid storage, clear it
                 localStorage.removeItem('auth-storage');
                 if (!authToken) {
@@ -54,7 +54,7 @@ function App() {
             // Inconsistent state - clear it
             logout();
         }
-    }, [logout, setToken, setUser, setCurrentOrganization]);
+    }, [logout, setToken, setUser, setCurrentOrganization, isAuthenticated]);
 
     if (!isAuthenticated) {
         if (location.pathname === '/register') {
