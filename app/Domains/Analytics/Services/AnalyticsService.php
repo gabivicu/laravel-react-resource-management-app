@@ -166,7 +166,7 @@ class AnalyticsService
 
             $byProject = $allocations->groupBy('project_id')->map(function ($group) {
                 return [
-                    'project_name' => $group->first()->project->title ?? 'N/A', // Changed from name to title as per Project model
+                    'project_name' => $group->first()->project->name ?? 'N/A',
                     'allocations_count' => $group->count(),
                     'total_percentage' => $group->sum('allocation_percentage'),
                 ];
