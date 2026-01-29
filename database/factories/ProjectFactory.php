@@ -19,7 +19,7 @@ class ProjectFactory extends Factory
             'status' => $this->faker->randomElement(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
             'start_date' => $this->faker->dateTimeBetween('-1 month', '+1 month'),
             'end_date' => $this->faker->dateTimeBetween('+1 month', '+6 months'),
-            'budget' => $this->faker->randomFloat(2, 1000, 100000),
+            'budget' => $this->faker->numberBetween(1000, 100000),
         ];
     }
 }

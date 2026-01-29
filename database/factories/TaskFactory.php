@@ -21,8 +21,8 @@ class TaskFactory extends Factory
             'status' => $this->faker->randomElement(['todo', 'in_progress', 'review', 'done']),
             'priority' => $this->faker->randomElement(['low', 'medium', 'high', 'urgent']),
             'due_date' => $this->faker->optional()->dateTimeBetween('now', '+1 month'),
-            'estimated_hours' => $this->faker->randomFloat(2, 1, 40),
-            'actual_hours' => $this->faker->optional()->randomFloat(2, 1, 40),
+            'estimated_hours' => $this->faker->numberBetween(1, 40),
+            'actual_hours' => $this->faker->optional()->numberBetween(1, 40),
             'order' => $this->faker->numberBetween(1, 100),
         ];
     }
