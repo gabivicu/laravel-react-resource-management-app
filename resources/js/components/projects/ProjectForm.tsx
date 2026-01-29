@@ -4,6 +4,14 @@ import { projectService } from '@/services/projects';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Project } from '@/types';
+import {
+    TextField,
+    Grid,
+    Box,
+    MenuItem,
+    alpha,
+} from '@mui/material';
+import DatePicker from '@/components/ui/DatePicker';
 
 interface ProjectFormData {
     name: string;
@@ -172,8 +180,9 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
         <form onSubmit={handleSubmit} className={isInModal ? "" : "bg-white p-6 rounded-lg shadow"}>
                 {/* Name */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">{t('projects.nameLabel')} *</label>
+                    <label htmlFor="project-name" className="block text-sm font-medium mb-2">{t('projects.nameLabel')} *</label>
                     <input
+                        id="project-name"
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -189,8 +198,9 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
 
                 {/* Description */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">{t('projects.description')}</label>
+                    <label htmlFor="project-description" className="block text-sm font-medium mb-2">{t('projects.description')}</label>
                     <textarea
+                        id="project-description"
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         rows={4}
@@ -200,48 +210,68 @@ export default function ProjectForm({ projectId, onSuccess, onCancel }: ProjectF
                 </div>
 
                 {/* Status */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">{t('projects.status')} *</label>
-                    <select
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        fullWidth
+                        select
+                        label={t('projects.status')}
+                        required
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as Project['status'] })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                        required
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                backgroundColor: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                        ? alpha(theme.palette.background.paper, 0.8)
+                                        : theme.palette.background.paper,
+                                '&:hover': {
+                                    backgroundColor: (theme) =>
+                                        theme.palette.mode === 'dark'
+                                            ? alpha(theme.palette.background.paper, 0.9)
+                                            : alpha(theme.palette.primary.main, 0.02),
+                                },
+                                '&.Mui-focused': {
+                                    backgroundColor: (theme) =>
+                                        theme.palette.mode === 'dark'
+                                            ? theme.palette.background.paper
+                                            : theme.palette.background.paper,
+                                },
+                            },
+                        }}
                     >
-                        <option value="planning">{t('projects.statusPlanning')}</option>
-                        <option value="active">{t('projects.statusActive')}</option>
-                        <option value="on_hold">{t('projects.statusOnHold')}</option>
-                        <option value="completed">{t('projects.statusCompleted')}</option>
-                        <option value="cancelled">{t('projects.statusCancelled')}</option>
-                    </select>
-                </div>
+                        <MenuItem value="planning">{t('projects.statusPlanning')}</MenuItem>
+                        <MenuItem value="active">{t('projects.statusActive')}</MenuItem>
+                        <MenuItem value="on_hold">{t('projects.statusOnHold')}</MenuItem>
+                        <MenuItem value="completed">{t('projects.statusCompleted')}</MenuItem>
+                        <MenuItem value="cancelled">{t('projects.statusCancelled')}</MenuItem>
+                    </TextField>
+                </Box>
 
                 {/* Dates */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">{t('projects.startDate')}</label>
-                        <input
-                            type="date"
-                            value={formData.start_date}
-                            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                <Grid container spacing={2} sx={{ mb: 3, mt: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                        <DatePicker
+                            label={t('projects.startDate')}
+                            value={formData.start_date || null}
+                            onChange={(value) => setFormData({ ...formData, start_date: value || '' })}
+                            fullWidth
                         />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">{t('projects.endDate')}</label>
-                        <input
-                            type="date"
-                            value={formData.end_date}
-                            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                        <DatePicker
+                            label={t('projects.endDate')}
+                            value={formData.end_date || null}
+                            onChange={(value) => setFormData({ ...formData, end_date: value || '' })}
+                            fullWidth
                         />
-                    </div>
-                </div>
+                    </Grid>
+                </Grid>
 
                 {/* Budget */}
                 <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">{t('projects.budget')}</label>
+                    <label htmlFor="project-budget" className="block text-sm font-medium mb-2">{t('projects.budget')}</label>
                     <input
+                        id="project-budget"
                         type="number"
                         step="0.01"
                         min="0"

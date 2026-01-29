@@ -24,8 +24,9 @@ echo "Creating storage directories..."
 mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache 2>/dev/null
 
 # Fix permissions (don't fail if chown fails)
-chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
-chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+# SKIP chmod/chown in development as it is very slow on Docker Desktop for Mac
+# chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+# chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
 # Install dependencies if vendor directory doesn't exist (run in background to not block)
 if [ ! -d "vendor" ]; then

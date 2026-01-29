@@ -17,11 +17,23 @@ class UserResource extends JsonResource
             $avatar = $appUrl.$avatar;
         }
 
+        // Get role_id from organization_user pivot for current organization
+        $organizationId = $request->user()->current_organization_id ?? null;
+        $roleId = null;
+
+        if ($organizationId && $this->organizations) {
+            $organization = $this->organizations->firstWhere('id', $organizationId);
+            if ($organization && $organization->pivot) {
+                $roleId = $organization->pivot->role_id;
+            }
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
             'avatar' => $avatar,
+            'role_id' => $roleId,
             'role' => $this->whenPivotLoaded('project_members', function () {
                 return $this->pivot->role;
             }),

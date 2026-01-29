@@ -1,36 +1,113 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    IconButton,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText,
+    Tooltip,
+    Typography,
+    Box,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { Check as CheckIcon } from '@mui/icons-material';
+
+interface LanguageOption {
+    code: string;
+    label: string;
+    flag: string;
+}
+
+const languages: LanguageOption[] = [
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'ro', label: 'Română', flag: '🇷🇴' },
+];
 
 export default function LanguageSelector() {
     const { i18n } = useTranslation();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
 
-    const changeLanguage = (lng: string) => {
-        i18n.changeLanguage(lng);
+    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
     };
 
-    const languages = [
-        { code: 'en', label: 'English', flag: '🇬🇧' },
-        { code: 'ro', label: 'Română', flag: '🇷🇴' },
-    ];
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const changeLanguage = (code: string) => {
+        i18n.changeLanguage(code);
+        handleClose();
+    };
+
+    const currentLanguage = languages.find((lang) => lang.code === i18n.language) || languages[0];
 
     return (
-        <div className="relative">
-            <select
-                value={i18n.language}
-                onChange={(e) => changeLanguage(e.target.value)}
-                className="px-2 py-1.5 text-sm bg-white text-blue-600 rounded-lg border-0 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 cursor-pointer appearance-none pr-8 font-medium"
-                aria-label="Select language"
+        <>
+            <Tooltip title="Change language">
+                <IconButton
+                    onClick={handleClick}
+                    sx={{
+                        color: 'text.secondary',
+                        backgroundColor: open 
+                            ? (theme) => alpha(theme.palette.primary.main, 0.1)
+                            : 'transparent',
+                    }}
+                >
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                        }}
+                    >
+                        <Typography component="span" sx={{ fontSize: '1.2rem' }}>
+                            {currentLanguage.flag}
+                        </Typography>
+                    </Box>
+                </IconButton>
+            </Tooltip>
+
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                PaperProps={{
+                    sx: { minWidth: 160, mt: 1 },
+                }}
             >
+                <Typography
+                    variant="overline"
+                    sx={{
+                        px: 2,
+                        py: 1,
+                        display: 'block',
+                        color: 'text.secondary',
+                        fontSize: '0.65rem',
+                    }}
+                >
+                    Select Language
+                </Typography>
                 {languages.map((lang) => (
-                    <option key={lang.code} value={lang.code} className="text-gray-900">
-                        {lang.flag} {lang.label}
-                    </option>
+                    <MenuItem
+                        key={lang.code}
+                        onClick={() => changeLanguage(lang.code)}
+                        selected={i18n.language === lang.code}
+                    >
+                        <ListItemIcon sx={{ fontSize: '1.25rem', minWidth: 36 }}>
+                            {lang.flag}
+                        </ListItemIcon>
+                        <ListItemText>{lang.label}</ListItemText>
+                        {i18n.language === lang.code && (
+                            <CheckIcon fontSize="small" color="primary" />
+                        )}
+                    </MenuItem>
                 ))}
-            </select>
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-            </div>
-        </div>
+            </Menu>
+        </>
     );
 }

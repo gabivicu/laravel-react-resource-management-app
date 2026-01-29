@@ -1,146 +1,253 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
+import {
+    AppBar,
+    Toolbar,
+    IconButton,
+    Typography,
+    Box,
+    Avatar,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText,
+    Divider,
+    Tooltip,
+    Badge,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+    Menu as MenuIcon,
+    Person as PersonIcon,
+    Logout as LogoutIcon,
+    DarkMode as DarkModeIcon,
+    LightMode as LightModeIcon,
+    Notifications as NotificationsIcon,
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/auth';
+import { useTheme } from '@/theme/ThemeContext';
 import LanguageSelector from '../ui/LanguageSelector';
 
 interface HeaderProps {
-    onMenuClick?: (e?: React.MouseEvent) => void;
+    onMenuClick?: () => void;
     onEditProfile?: () => void;
+    sidebarOpen?: boolean;
 }
 
-export default function Header({ onMenuClick, onEditProfile }: HeaderProps) {
+export default function Header({ onMenuClick, onEditProfile, sidebarOpen }: HeaderProps) {
     const { t } = useTranslation();
+    const { toggleMode, isDark } = useTheme();
     const authStore = useAuthStore();
     const user = authStore.user;
     const logout = authStore.logout;
     const currentOrganization = authStore.currentOrganization;
-    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-    const userMenuRef = useRef<HTMLDivElement>(null);
+    
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const menuOpen = Boolean(anchorEl);
 
-    // Close menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-                setIsUserMenuOpen(false);
-            }
-        };
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
 
-        if (isUserMenuOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isUserMenuOpen]);
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
 
     const handleEditProfile = () => {
-        setIsUserMenuOpen(false);
-        if (onEditProfile) {
-            onEditProfile();
-        }
+        handleMenuClose();
+        onEditProfile?.();
     };
 
     const handleLogout = () => {
-        setIsUserMenuOpen(false);
+        handleMenuClose();
         logout();
     };
 
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
     return (
-        <header className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
-            <div className="px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                    {/* Hamburger menu button for mobile */}
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (onMenuClick) {
-                                onMenuClick(e);
-                            }
+        <AppBar
+            position="sticky"
+            elevation={0}
+            sx={{
+                backgroundColor: (theme) => 
+                    theme.palette.mode === 'dark' 
+                        ? alpha(theme.palette.background.paper, 0.8)
+                        : alpha(theme.palette.background.paper, 0.9),
+                backdropFilter: 'blur(12px)',
+                borderBottom: 1,
+                borderColor: 'divider',
+            }}
+        >
+            <Toolbar sx={{ gap: 1, minHeight: { xs: 64, sm: 70 } }}>
+                {/* Menu Button */}
+                <IconButton
+                    onClick={onMenuClick}
+                    edge="start"
+                    sx={{
+                        color: 'text.primary',
+                        backgroundColor: sidebarOpen 
+                            ? (theme) => alpha(theme.palette.primary.main, 0.1)
+                            : 'transparent',
+                    }}
+                >
+                    <MenuIcon />
+                </IconButton>
+
+                {/* Logo & Brand */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #FFC107 0%, #FF8F00 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 12px rgba(255, 193, 7, 0.3)',
                         }}
-                        onTouchStart={(e) => {
-                            e.stopPropagation();
-                        }}
-                        onMouseDown={(e) => {
-                            e.stopPropagation();
-                        }}
-                        className="lg:hidden p-2 rounded-lg hover:bg-blue-500 transition-colors mr-2 z-50 relative"
-                        aria-label="Toggle menu"
-                        type="button"
                     >
-                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                    
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
-                        <span className="text-blue-600 text-sm sm:text-lg font-bold">RM</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <h1 className="text-base sm:text-xl font-bold text-white truncate">{t('header.appName')}</h1>
-                        {currentOrganization && (
-                            <p className="text-xs sm:text-sm text-blue-100 truncate">{currentOrganization.name}</p>
-                        )}
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-                    <LanguageSelector />
-                    <div className="relative" ref={userMenuRef}>
-                        <button
-                            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                            className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-500 transition-colors"
-                            aria-label="User menu"
+                        <Typography 
+                            variant="h6" 
+                            fontWeight={700}
+                            sx={{ color: '#0F172A' }}
                         >
-                            <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                                {user?.avatar ? (
-                                    <img 
-                                        src={user.avatar} 
-                                        alt={user?.name || 'User'} 
-                                        className="w-8 h-8 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <span className="text-white text-sm font-medium">
-                                        {user?.name?.charAt(0).toUpperCase()}
-                                    </span>
-                                )}
-                            </div>
-                            <span className="text-sm text-white font-medium">{user?.name}</span>
-                            <svg 
-                                className={`w-4 h-4 text-white transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
+                            RM
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        <Typography 
+                            variant="h6" 
+                            fontWeight={700}
+                            sx={{ 
+                                color: 'text.primary',
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            {t('header.appName')}
+                        </Typography>
+                        {currentOrganization && (
+                            <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                    color: 'text.secondary',
+                                    display: 'block',
+                                }}
                             >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        
-                        {isUserMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50">
-                                <button
-                                    onClick={handleEditProfile}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                    {t('auth.editProfile')}
-                                </button>
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                    </svg>
-                                    {t('auth.logout')}
-                                </button>
-                            </div>
+                                {currentOrganization.name}
+                            </Typography>
                         )}
-                    </div>
-                </div>
-            </div>
-        </header>
+                    </Box>
+                </Box>
+
+                {/* Spacer */}
+                <Box sx={{ flexGrow: 1 }} />
+
+                {/* Actions */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* Theme Toggle */}
+                    <Tooltip title={isDark ? 'Light mode' : 'Dark mode'}>
+                        <IconButton
+                            onClick={toggleMode}
+                            sx={{ color: 'text.secondary' }}
+                        >
+                            {isDark ? <LightModeIcon /> : <DarkModeIcon />}
+                        </IconButton>
+                    </Tooltip>
+
+                    {/* Notifications */}
+                    <Tooltip title="Notifications">
+                        <IconButton sx={{ color: 'text.secondary' }}>
+                            <Badge badgeContent={3} color="error">
+                                <NotificationsIcon />
+                            </Badge>
+                        </IconButton>
+                    </Tooltip>
+
+                    {/* Language Selector */}
+                    <LanguageSelector />
+
+                    {/* User Menu */}
+                    <Box sx={{ ml: 1 }}>
+                        <Tooltip title="Account settings">
+                            <IconButton
+                                onClick={handleMenuOpen}
+                                sx={{
+                                    p: 0.5,
+                                    border: 2,
+                                    borderColor: menuOpen ? 'primary.main' : 'transparent',
+                                    transition: 'border-color 0.2s ease',
+                                }}
+                            >
+                                <Avatar
+                                    src={user?.avatar}
+                                    alt={user?.name}
+                                    sx={{
+                                        width: 36,
+                                        height: 36,
+                                        bgcolor: 'primary.main',
+                                        color: 'primary.contrastText',
+                                        fontWeight: 600,
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
+                                    {user?.name ? getInitials(user.name) : 'U'}
+                                </Avatar>
+                            </IconButton>
+                        </Tooltip>
+
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={menuOpen}
+                            onClose={handleMenuClose}
+                            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                            PaperProps={{
+                                sx: { 
+                                    minWidth: 220,
+                                    mt: 1,
+                                },
+                            }}
+                        >
+                            {/* User Info */}
+                            <Box sx={{ px: 2, py: 1.5 }}>
+                                <Typography variant="subtitle1" fontWeight={600}>
+                                    {user?.name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {user?.email}
+                                </Typography>
+                            </Box>
+                            
+                            <Divider sx={{ my: 1 }} />
+
+                            <MenuItem onClick={handleEditProfile}>
+                                <ListItemIcon>
+                                    <PersonIcon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>{t('auth.editProfile')}</ListItemText>
+                            </MenuItem>
+
+                            <Divider sx={{ my: 1 }} />
+
+                            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                                <ListItemIcon>
+                                    <LogoutIcon fontSize="small" sx={{ color: 'error.main' }} />
+                                </ListItemIcon>
+                                <ListItemText>{t('auth.logout')}</ListItemText>
+                            </MenuItem>
+                        </Menu>
+                    </Box>
+                </Box>
+            </Toolbar>
+        </AppBar>
     );
 }

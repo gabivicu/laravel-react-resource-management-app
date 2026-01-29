@@ -3,6 +3,8 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import TaskForm from '@/components/tasks/TaskForm';
 import { taskService } from '@/services/tasks';
 import { projectService } from '@/services/projects';
@@ -44,11 +46,13 @@ describe('TaskForm', () => {
 
     const renderComponent = () => {
         return render(
-            <QueryClientProvider client={queryClient}>
-                <BrowserRouter>
-                    <TaskForm />
-                </BrowserRouter>
-            </QueryClientProvider>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <QueryClientProvider client={queryClient}>
+                    <BrowserRouter>
+                        <TaskForm />
+                    </BrowserRouter>
+                </QueryClientProvider>
+            </LocalizationProvider>
         );
     };
 

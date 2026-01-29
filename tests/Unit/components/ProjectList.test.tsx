@@ -46,7 +46,7 @@ describe('ProjectList', () => {
 
         renderComponent();
 
-        expect(screen.getByText('Loading...')).toBeInTheDocument();
+        expect(screen.getByTestId('loading-skeletons')).toBeInTheDocument();
     });
 
     it('should display projects list', async () => {
@@ -91,7 +91,7 @@ describe('ProjectList', () => {
         renderComponent();
 
         await waitFor(() => {
-            expect(screen.getByText('No projects found.')).toBeInTheDocument();
+            expect(screen.getByText('No projects yet')).toBeInTheDocument();
         });
     });
 });

@@ -59,6 +59,12 @@ api.interceptors.request.use(
     }
 );
 
+let onUnauthorized: (() => void) | null = null;
+
+export const setUnauthorizedCallback = (callback: () => void) => {
+    onUnauthorized = callback;
+};
+
 // Response interceptor for error handling
 api.interceptors.response.use(
     (response) => response,
@@ -81,22 +87,14 @@ api.interceptors.response.use(
                 return Promise.reject(error);
             }
             
-            // Token exists but request returned 401 - this could be:
-            // 1. Token expired
-            // 2. Token invalid
-            // 3. Request-specific issue (e.g., FormData boundary problem)
+            // Token exists but request returned 401 - likely expired or invalid
+            console.warn('Session expired or invalid, logging out...');
             
-            // Log the error for debugging
-            console.error('401 Unauthorized:', {
-                url: requestUrl,
-                method: error.config?.method,
-                hasToken: !!currentToken,
-                tokenPreview: currentToken.substring(0, 20) + '...',
-            });
+            // Trigger the unauthorized callback if registered
+            if (onUnauthorized) {
+                onUnauthorized();
+            }
             
-            // Don't auto-logout immediately - let the component handle it
-            // Only logout if it's clearly an authentication issue (not a request format issue)
-            // We'll let the error propagate to the component first
             return Promise.reject(error);
         }
 

@@ -28,14 +28,19 @@ class UserController extends BaseController
 
         $users = $this->userService->getPaginated($organizationId, $filters, $perPage);
 
-        return $this->success($users->items(), 'Users retrieved successfully', 200, [
-            'pagination' => [
-                'current_page' => $users->currentPage(),
-                'last_page' => $users->lastPage(),
-                'per_page' => $users->perPage(),
-                'total' => $users->total(),
-            ],
-        ]);
+        return $this->success(
+            UserResource::collection($users->items())->resolve(),
+            'Users retrieved successfully',
+            200,
+            [
+                'pagination' => [
+                    'current_page' => $users->currentPage(),
+                    'last_page' => $users->lastPage(),
+                    'per_page' => $users->perPage(),
+                    'total' => $users->total(),
+                ],
+            ]
+        );
     }
 
     /**

@@ -44,28 +44,6 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiting(): void
     {
-        // Disable rate limiting in local environment
-        if (app()->environment('local')) {
-            // Return unlimited rate limits for local development
-            RateLimiter::for('auth', function (Request $request) {
-                return Limit::none();
-            });
-
-            RateLimiter::for('api-write', function (Request $request) {
-                return Limit::none();
-            });
-
-            RateLimiter::for('api-read', function (Request $request) {
-                return Limit::none();
-            });
-
-            RateLimiter::for('api', function (Request $request) {
-                return Limit::none();
-            });
-
-            return;
-        }
-
         // Rate limiter for authentication endpoints (strict)
         RateLimiter::for('auth', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());

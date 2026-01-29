@@ -52,6 +52,7 @@ describe('Rate Limiting Tests', () => {
             
             // Make 5 login attempts (the limit is 5 per IP per 15 minutes)
             for (let i = 0; i < 5; i++) {
+                cy.wait(100); // Add delay to prevent 502 Bad Gateway
                 cy.request({
                     method: 'POST',
                     url: `${API_BASE_URL}/auth/login`,
@@ -103,6 +104,7 @@ describe('Rate Limiting Tests', () => {
             // Make 5 register attempts with same IP (the limit is per IP)
             // Use unique emails to avoid validation conflicts
             for (let i = 0; i < 5; i++) {
+                cy.wait(100); // Add delay to prevent 502 Bad Gateway
                 cy.request({
                     method: 'POST',
                     url: `${API_BASE_URL}/auth/register`,
@@ -226,32 +228,28 @@ describe('Rate Limiting Tests', () => {
             // Make 60 POST requests (the limit for write operations)
             // Note: This test may take a while and may hit other limits
             // We'll make fewer requests to test the concept
-            const requests = [];
             for (let i = 0; i < 60; i++) {
-                requests.push(
-                    cy.request({
-                        method: 'POST',
-                        url: `${API_BASE_URL}/projects`,
-                        headers: {
-                            'Authorization': `Bearer ${authToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: {
-                            name: `Test Project ${i}`,
-                            description: 'Test description',
-                        },
-                        failOnStatusCode: false,
-                    }).then((response) => {
-                        // Accept 201 (created), 422 (validation), or 429 (rate limit)
-                        expect([201, 422, 429, 500]).to.include(response.status);
-                    })
-                );
+                cy.wait(50); // Add delay to prevent overwhelming the server
+                cy.request({
+                    method: 'POST',
+                    url: `${API_BASE_URL}/projects`,
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: {
+                        name: `Test Project ${i}`,
+                        description: 'Test description',
+                    },
+                    failOnStatusCode: false,
+                }).then((response) => {
+                    // Accept 201 (created), 422 (validation), or 429 (rate limit)
+                    expect([201, 422, 429, 500]).to.include(response.status);
+                });
             }
 
-            // Wait for all requests to complete
-            cy.wrap(requests).then(() => {
-                // 61st request should be rate limited
-                cy.request({
+            // 61st request should be rate limited
+            cy.request({
                     method: 'POST',
                     url: `${API_BASE_URL}/projects`,
                     headers: {
@@ -278,7 +276,6 @@ describe('Rate Limiting Tests', () => {
                         cy.log(`Received status ${response.status} instead of 429 - may be other errors`);
                     }
                 });
-            });
         });
 
         it('should rate limit PUT/DELETE operations', function() {
@@ -309,6 +306,7 @@ describe('Rate Limiting Tests', () => {
                 // Make multiple PUT requests (limit is 60 per minute)
                 // Note: Making 60 requests may take time, so we'll test with fewer
                 for (let i = 0; i < 60; i++) {
+                    cy.wait(50); // Add delay
                     cy.request({
                         method: 'PUT',
                         url: `${API_BASE_URL}/projects/${projectId}`,
@@ -389,24 +387,20 @@ describe('Rate Limiting Tests', () => {
         it('should allow more read operations than write operations', () => {
             // Make 300 GET requests (the limit for read operations)
             // This is higher than write operations (60)
-            const requests = [];
             for (let i = 0; i < 300; i++) {
-                requests.push(
-                    cy.request({
-                        method: 'GET',
-                        url: `${API_BASE_URL}/projects`,
-                        headers: {
-                            'Authorization': `Bearer ${authToken}`,
-                        },
-                        failOnStatusCode: false,
-                    })
-                );
+                cy.wait(20); // Add small delay
+                cy.request({
+                    method: 'GET',
+                    url: `${API_BASE_URL}/projects`,
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    failOnStatusCode: false,
+                });
             }
 
-            // Wait for all requests to complete
-            cy.wrap(requests).then(() => {
-                // 301st request should be rate limited
-                cy.request({
+            // 301st request should be rate limited
+            cy.request({
                     method: 'GET',
                     url: `${API_BASE_URL}/projects`,
                     headers: {
@@ -417,7 +411,6 @@ describe('Rate Limiting Tests', () => {
                     // Should receive 429 Too Many Requests
                     expect(response.status).to.eq(429);
                 });
-            });
         });
     });
 
@@ -502,6 +495,7 @@ describe('Rate Limiting Tests', () => {
             // Make enough requests to trigger rate limit
             // For auth endpoint, make 6 login attempts
             for (let i = 0; i < 6; i++) {
+                cy.wait(100); // Add delay to prevent 502 Bad Gateway
                 cy.request({
                     method: 'POST',
                     url: `${API_BASE_URL}/auth/login`,
@@ -553,6 +547,7 @@ describe('Rate Limiting Tests', () => {
             for (let violation = 0; violation < 10; violation++) {
                 // Make 6 attempts to trigger one violation
                 for (let i = 0; i < 6; i++) {
+                    cy.wait(100); // Add delay to prevent 502 Bad Gateway
                     cy.request({
                         method: 'POST',
                         url: `${API_BASE_URL}/auth/login`,

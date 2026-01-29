@@ -2,10 +2,19 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { resourceAllocationService } from '@/services/resourceAllocations';
 import { userService } from '@/services/users';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ResourceAllocation } from '@/types';
 import ProjectSelector from '@/components/projects/ProjectSelector';
+import {
+    Box,
+    TextField,
+    MenuItem,
+    Button,
+    Grid,
+    CircularProgress,
+} from '@mui/material';
+import DatePicker from '@/components/ui/DatePicker';
 
 interface ResourceAllocationFormData {
     project_id: string;
@@ -60,11 +69,18 @@ export default function ResourceAllocationForm({
         enabled: isEdit && !!editId,
     });
 
+    const users = useMemo(() => usersData?.data || [], [usersData?.data]);
+
     useEffect(() => {
         if (allocation && isEdit) {
+            const userIdStr = allocation.user_id.toString();
+            // Check if user_id exists in the users list (if users are available)
+            // If users are not yet loaded, set user_id anyway (will be validated when users load)
+            const userExists = users.length === 0 || users.some(user => user.id.toString() === userIdStr);
+            
             setFormData({
                 project_id: allocation.project_id.toString(),
-                user_id: allocation.user_id.toString(),
+                user_id: userExists ? userIdStr : '',
                 role: allocation.role || '',
                 allocation_percentage: allocation.allocation_percentage.toString(),
                 start_date: new Date(allocation.start_date).toISOString().split('T')[0],
@@ -72,7 +88,7 @@ export default function ResourceAllocationForm({
                 notes: allocation.notes || '',
             });
         }
-    }, [allocation, isEdit]);
+    }, [allocation, isEdit, users]);
 
     const createMutation = useMutation({
         mutationFn: resourceAllocationService.createAllocation,
@@ -131,11 +147,19 @@ export default function ResourceAllocationForm({
     };
 
     if (isEdit && isLoading) {
-        return <div className="p-8">{t('common.loading')}</div>;
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
     }
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
-    const users = usersData?.data || [];
+    const usersLoading = !usersData;
+
+    // Check if the user_id value exists in the users list
+    const isValidUserId = !formData.user_id || users.some(user => user.id.toString() === formData.user_id);
+    const displayUserId = isValidUserId ? formData.user_id : '';
 
     const handleCancel = () => {
         if (onCancel) {
@@ -146,128 +170,122 @@ export default function ResourceAllocationForm({
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <Box component="form" onSubmit={handleSubmit}>
             {/* Project */}
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">{t('resourceAllocations.projectLabel')} *</label>
+            <Box sx={{ mb: 3, pt: 2 }}>
                 <ProjectSelector
                     value={formData.project_id ? Number(formData.project_id) : undefined}
                     onChange={(id) => setFormData({ ...formData, project_id: id ? id.toString() : '' })}
                     disabled={isEdit}
-                    label=""
+                    label={t('resourceAllocations.projectLabel')}
+                    error={errors.project_id?.[0]}
                 />
-                {errors.project_id && (
-                    <p className="mt-1 text-sm text-red-600">{errors.project_id[0]}</p>
-                )}
-            </div>
+            </Box>
 
-                {/* User */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.userLabel')} *</label>
-                    <select
-                        value={formData.user_id}
-                        onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-lg ${
-                            errors.user_id ? 'border-red-500' : ''
-                        }`}
+            {/* User */}
+            <TextField
+                fullWidth
+                select
+                label={t('resourceAllocations.userLabel')}
+                required
+                value={displayUserId}
+                onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+                error={!!errors.user_id}
+                helperText={errors.user_id?.[0]}
+                disabled={isEdit || usersLoading}
+                sx={{ mb: 3 }}
+            >
+                <MenuItem value="">{t('resourceAllocations.selectUser')}</MenuItem>
+                {users.map((user) => (
+                    <MenuItem key={user.id} value={user.id.toString()}>
+                        {user.name} ({user.email})
+                    </MenuItem>
+                ))}
+            </TextField>
+
+            {/* Allocation Percentage */}
+            <TextField
+                fullWidth
+                type="number"
+                label={t('resourceAllocations.allocationPercentageLabel')}
+                required
+                value={formData.allocation_percentage}
+                onChange={(e) => setFormData({ ...formData, allocation_percentage: e.target.value })}
+                error={!!errors.allocation_percentage}
+                helperText={errors.allocation_percentage?.[0]}
+                inputProps={{ step: 0.1, min: 0, max: 100 }}
+                sx={{ mb: 3 }}
+            />
+
+            {/* Role */}
+            <TextField
+                fullWidth
+                label={t('resourceAllocations.roleLabel')}
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                placeholder={t('resourceAllocations.rolePlaceholder')}
+                sx={{ mb: 3 }}
+            />
+
+            {/* Dates */}
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                    <DatePicker
+                        label={t('resourceAllocations.startDate')}
+                        value={formData.start_date || null}
+                        onChange={(value) => setFormData({ ...formData, start_date: value || '' })}
                         required
-                        disabled={isEdit}
-                    >
-                        <option value="">{t('resourceAllocations.selectUser')}</option>
-                        {users.map((user) => (
-                            <option key={user.id} value={user.id}>
-                                {user.name} ({user.email})
-                            </option>
-                        ))}
-                    </select>
-                    {errors.user_id && (
-                        <p className="mt-1 text-sm text-red-600">{errors.user_id[0]}</p>
+                        fullWidth
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                    <DatePicker
+                        label={t('resourceAllocations.endDate')}
+                        value={formData.end_date || null}
+                        onChange={(value) => setFormData({ ...formData, end_date: value || '' })}
+                        fullWidth
+                    />
+                </Grid>
+            </Grid>
+
+            {/* Notes */}
+            <TextField
+                fullWidth
+                multiline
+                rows={4}
+                label={t('resourceAllocations.notesLabel')}
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                sx={{ mb: 3 }}
+            />
+
+            {/* Actions */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={isSubmitting}
+                    fullWidth
+                >
+                    {isSubmitting ? (
+                        <>
+                            <CircularProgress size={20} sx={{ mr: 1 }} />
+                            {t('common.saving')}
+                        </>
+                    ) : isEdit ? (
+                        t('resourceAllocations.updateAllocation')
+                    ) : (
+                        t('resourceAllocations.createAllocationButton')
                     )}
-                </div>
-
-                {/* Allocation Percentage */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.allocationPercentageLabel')} *</label>
-                    <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={formData.allocation_percentage}
-                        onChange={(e) => setFormData({ ...formData, allocation_percentage: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-lg ${
-                            errors.allocation_percentage ? 'border-red-500' : ''
-                        }`}
-                        required
-                    />
-                    {errors.allocation_percentage && (
-                        <p className="mt-1 text-sm text-red-600">{errors.allocation_percentage[0]}</p>
-                    )}
-                </div>
-
-                {/* Role */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.roleLabel')}</label>
-                    <input
-                        type="text"
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg"
-                        placeholder={t('resourceAllocations.rolePlaceholder')}
-                    />
-                </div>
-
-                {/* Dates */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">{t('resourceAllocations.startDate')} *</label>
-                        <input
-                            type="date"
-                            value={formData.start_date}
-                            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">{t('resourceAllocations.endDate')}</label>
-                        <input
-                            type="date"
-                            value={formData.end_date}
-                            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg"
-                        />
-                    </div>
-                </div>
-
-                {/* Notes */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">{t('resourceAllocations.notesLabel')}</label>
-                    <textarea
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        rows={4}
-                        className="w-full px-3 py-2 border rounded-lg"
-                    />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-4">
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {isSubmitting ? t('common.saving') : isEdit ? t('resourceAllocations.updateAllocation') : t('resourceAllocations.createAllocationButton')}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                        {t('common.cancel')}
-                    </button>
-                </div>
-            </form>
+                </Button>
+                <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={handleCancel}
+                >
+                    {t('common.cancel')}
+                </Button>
+            </Box>
+        </Box>
     );
 }
