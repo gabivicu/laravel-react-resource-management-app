@@ -5,13 +5,43 @@ import { projectService } from '@/services/projects';
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import ResourceAllocationForm from './ResourceAllocationForm';
+import {
+    Box,
+    Typography,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    LinearProgress,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    IconButton,
+    Tooltip,
+    Card,
+    CardContent,
+    CircularProgress,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { PageHeader, EmptyState, ConfirmDialog } from '@/components/ui';
 
 export default function ResourceAllocationList() {
     const { t } = useTranslation();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [projectFilter, setProjectFilter] = useState<string>('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingAllocationId, setEditingAllocationId] = useState<number | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [deletingAllocationId, setDeletingAllocationId] = useState<number | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const queryClient = useQueryClient();
 
     const { data: projectsData } = useQuery({
@@ -30,24 +60,10 @@ export default function ResourceAllocationList() {
         mutationFn: resourceAllocationService.deleteAllocation,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['resource-allocations'] });
+            setIsDeleteDialogOpen(false);
+            setDeletingAllocationId(null);
         },
     });
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500">{t('resourceAllocations.loadingAllocations')}</div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-4 bg-red-50 text-red-600 rounded">
-                {t('resourceAllocations.errorLoadingAllocations')}
-            </div>
-        );
-    }
 
     const allocations = data?.data || [];
     const projects = projectsData?.data || [];
@@ -57,197 +73,304 @@ export default function ResourceAllocationList() {
         setIsEditModalOpen(true);
     };
 
+    const openDeleteDialog = (allocationId: number) => {
+        setDeletingAllocationId(allocationId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleDelete = () => {
+        if (deletingAllocationId) {
+            deleteMutation.mutate(deletingAllocationId);
+        }
+    };
+
     return (
-        <div className="w-full">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{t('resourceAllocations.title')}</h2>
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md"
-                >
-                    + {t('resourceAllocations.newAllocation')}
-                </button>
-            </div>
+        <Box>
+            <PageHeader
+                title={t('resourceAllocations.title')}
+                action={{
+                    label: t('resourceAllocations.newAllocation'),
+                    onClick: () => setIsCreateModalOpen(true),
+                    icon: <AddIcon />,
+                }}
+            />
 
             {/* Filters */}
-            <div className="mb-4">
-                <select
-                    value={projectFilter}
-                    onChange={(e) => setProjectFilter(e.target.value)}
-                    className="px-3 py-2 border rounded-lg"
-                >
-                    <option value="">{t('resourceAllocations.allProjects')}</option>
-                    {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                            {project.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            <Box sx={{ mb: 3 }}>
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                    <InputLabel>{t('resourceAllocations.allProjects')}</InputLabel>
+                    <Select
+                        value={projectFilter}
+                        onChange={(e) => setProjectFilter(e.target.value)}
+                        label={t('resourceAllocations.allProjects')}
+                    >
+                        <MenuItem value="">{t('resourceAllocations.allProjects')}</MenuItem>
+                        {projects.map((project) => (
+                            <MenuItem key={project.id} value={project.id}>
+                                {project.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
 
             {/* Allocations Table */}
-            {allocations.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">{t('resourceAllocations.noAllocationsFound')}</p>
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="text-blue-600 hover:text-blue-700"
-                    >
-                        {t('resourceAllocations.createFirstAllocation')}
-                    </button>
-                </div>
-            ) : (
-                <>
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.userLabel')}</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.projectLabel')}</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.allocation')}</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.roleLabel')}</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('resourceAllocations.period')}</th>
-                                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {allocations.map((allocation) => (
-                                    <tr key={allocation.id} className="hover:bg-gray-50">
-                                        <td className="px-4 lg:px-6 py-4">
-                                            <div className="font-medium text-gray-900">
-                                                {allocation.user?.name || 'N/A'}
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                {allocation.user?.email || ''}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">
-                                            {allocation.project?.name || 'N/A'}
-                                        </td>
-                                        <td className="px-4 lg:px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
-                                                    <div
-                                                        className="bg-blue-600 h-2 rounded-full"
-                                                        style={{ width: `${allocation.allocation_percentage}%` }}
-                                                    ></div>
-                                                </div>
-                                                <span className="text-sm font-medium">
-                                                    {allocation.allocation_percentage}%
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">
-                                            {allocation.role || '-'}
-                                        </td>
-                                        <td className="px-4 lg:px-6 py-4 text-sm text-gray-600">
-                                            <div>
-                                                {new Date(allocation.start_date).toLocaleDateString()}
-                                            </div>
-                                            {allocation.end_date && (
-                                                <div className="text-xs text-gray-500">
-                                                    to {new Date(allocation.end_date).toLocaleDateString()}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-4 lg:px-6 py-4 text-sm">
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => openEditModal(allocation.id)}
-                                                    className="text-blue-600 hover:text-blue-800"
-                                                >
-                                                    {t('common.edit')}
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (confirm(t('common.confirm'))) {
-                                                            deleteMutation.mutate(allocation.id);
-                                                        }
-                                                    }}
-                                                    className="text-red-600 hover:text-red-800"
-                                                    disabled={deleteMutation.isPending}
-                                                >
-                                                    {deleteMutation.isPending ? '...' : t('common.delete')}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Mobile Card View */}
-                    <div className="md:hidden space-y-4">
-                        {allocations.map((allocation) => (
-                            <div key={allocation.id} className="bg-white rounded-lg shadow p-4">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-gray-900 truncate">
+            {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                    <CircularProgress />
+                </Box>
+            ) : error ? (
+                <EmptyState
+                    type="error"
+                    title={t('resourceAllocations.errorLoadingAllocations')}
+                />
+            ) : allocations.length === 0 ? (
+                <EmptyState
+                    type="tasks"
+                    title={t('resourceAllocations.noAllocationsFound')}
+                    action={{
+                        label: t('resourceAllocations.createFirstAllocation'),
+                        onClick: () => setIsCreateModalOpen(true),
+                    }}
+                />
+            ) : !isMobile ? (
+                <TableContainer component={Paper} sx={{ mb: 2 }}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>{t('resourceAllocations.userLabel')}</TableCell>
+                                <TableCell>{t('resourceAllocations.projectLabel')}</TableCell>
+                                <TableCell>{t('resourceAllocations.allocation')}</TableCell>
+                                <TableCell>{t('resourceAllocations.roleLabel')}</TableCell>
+                                <TableCell>{t('resourceAllocations.period')}</TableCell>
+                                <TableCell align="right">{t('common.actions')}</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {allocations.map((allocation) => (
+                                <TableRow
+                                    key={allocation.id}
+                                    sx={{
+                                        '&:hover': {
+                                            backgroundColor: (theme) =>
+                                                alpha(theme.palette.primary.main, 0.04),
+                                        },
+                                    }}
+                                >
+                                    <TableCell>
+                                        <Typography variant="body2" fontWeight={600}>
                                             {allocation.user?.name || 'N/A'}
-                                        </div>
-                                        <div className="text-sm text-gray-500 truncate">
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
                                             {allocation.user?.email || ''}
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 ml-2">
-                                        <button
-                                            onClick={() => openEditModal(allocation.id)}
-                                            className="text-blue-600 hover:text-blue-800 text-sm"
-                                        >
-                                            {t('common.edit')}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (confirm(t('common.confirm'))) {
-                                                    deleteMutation.mutate(allocation.id);
-                                                }
-                                            }}
-                                            className="text-red-600 hover:text-red-800 text-sm"
-                                            disabled={deleteMutation.isPending}
-                                        >
-                                            {deleteMutation.isPending ? '...' : t('common.delete')}
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-2 text-sm">
-                                    <div>
-                                        <span className="font-medium text-gray-700">{t('resourceAllocations.projectLabel')}: </span>
-                                        <span className="text-gray-600">{allocation.project?.name || 'N/A'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="font-medium text-gray-700">{t('resourceAllocations.allocation')}: </span>
-                                        <div className="flex items-center mt-1">
-                                            <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
-                                                <div
-                                                    className="bg-blue-600 h-2 rounded-full"
-                                                    style={{ width: `${allocation.allocation_percentage}%` }}
-                                                ></div>
-                                            </div>
-                                            <span className="text-sm font-medium">{allocation.allocation_percentage}%</span>
-                                        </div>
-                                    </div>
-                                    {allocation.role && (
-                                        <div>
-                                            <span className="font-medium text-gray-700">{t('resourceAllocations.roleLabel')}: </span>
-                                            <span className="text-gray-600">{allocation.role}</span>
-                                        </div>
-                                    )}
-                                    <div>
-                                        <span className="font-medium text-gray-700">{t('resourceAllocations.period')}: </span>
-                                        <span className="text-gray-600">
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {allocation.project?.name || 'N/A'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 100,
+                                                    height: 8,
+                                                    borderRadius: 1,
+                                                    backgroundColor: (theme) =>
+                                                        alpha(theme.palette.primary.main, 0.2),
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                <LinearProgress
+                                                    variant="determinate"
+                                                    value={Number(allocation.allocation_percentage) || 0}
+                                                    sx={{
+                                                        height: '100%',
+                                                        backgroundColor: 'transparent',
+                                                        '& .MuiLinearProgress-bar': {
+                                                            backgroundColor: 'primary.main',
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {allocation.allocation_percentage}%
+                                            </Typography>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {allocation.role || '-'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" color="text.secondary">
                                             {new Date(allocation.start_date).toLocaleDateString()}
-                                            {allocation.end_date && ` - ${new Date(allocation.end_date).toLocaleDateString()}`}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </>
+                                        </Typography>
+                                        {allocation.end_date && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                to {new Date(allocation.end_date).toLocaleDateString()}
+                                            </Typography>
+                                        )}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                            <Tooltip title={t('common.edit')}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => openEditModal(allocation.id)}
+                                                    sx={{
+                                                        color: 'primary.main',
+                                                        '&:hover': {
+                                                            backgroundColor: (theme) =>
+                                                                alpha(theme.palette.primary.main, 0.1),
+                                                        },
+                                                    }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title={t('common.delete')}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => openDeleteDialog(allocation.id)}
+                                                    sx={{
+                                                        color: 'error.main',
+                                                        '&:hover': {
+                                                            backgroundColor: (theme) =>
+                                                                alpha(theme.palette.error.main, 0.1),
+                                                        },
+                                                    }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            ) : (
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {allocations.map((allocation) => (
+                        <Card key={allocation.id} elevation={0} sx={{ border: 1, borderColor: 'divider' }}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography variant="subtitle2" fontWeight={600} noWrap>
+                                            {allocation.user?.name || 'N/A'}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                            {allocation.user?.email || ''}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 1, ml: 1 }}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => openEditModal(allocation.id)}
+                                            sx={{ color: 'primary.main' }}
+                                        >
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => openDeleteDialog(allocation.id)}
+                                            sx={{ color: 'error.main' }}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+                                </Box>
+
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                    <Box>
+                                        <Typography variant="caption" fontWeight={600} color="text.secondary">
+                                            {t('resourceAllocations.projectLabel')}:{' '}
+                                        </Typography>
+                                        <Typography variant="body2" component="span">
+                                            {allocation.project?.name || 'N/A'}
+                                        </Typography>
+                                    </Box>
+
+                                    <Box>
+                                        <Typography variant="caption" fontWeight={600} color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                                            {t('resourceAllocations.allocation')}:
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    flex: 1,
+                                                    height: 8,
+                                                    borderRadius: 1,
+                                                    backgroundColor: (theme) =>
+                                                        alpha(theme.palette.primary.main, 0.2),
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                <LinearProgress
+                                                    variant="determinate"
+                                                    value={Number(allocation.allocation_percentage) || 0}
+                                                    sx={{
+                                                        height: '100%',
+                                                        backgroundColor: 'transparent',
+                                                        '& .MuiLinearProgress-bar': {
+                                                            backgroundColor: 'primary.main',
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {allocation.allocation_percentage}%
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {allocation.role && (
+                                        <Box>
+                                            <Typography variant="caption" fontWeight={600} color="text.secondary">
+                                                {t('resourceAllocations.roleLabel')}:{' '}
+                                            </Typography>
+                                            <Typography variant="body2" component="span">
+                                                {allocation.role}
+                                            </Typography>
+                                        </Box>
+                                    )}
+
+                                    <Box>
+                                        <Typography variant="caption" fontWeight={600} color="text.secondary">
+                                            {t('resourceAllocations.period')}:{' '}
+                                        </Typography>
+                                        <Typography variant="body2" component="span">
+                                            {new Date(allocation.start_date).toLocaleDateString()}
+                                            {allocation.end_date &&
+                                                ` - ${new Date(allocation.end_date).toLocaleDateString()}`}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onClose={() => {
+                    setIsDeleteDialogOpen(false);
+                    setDeletingAllocationId(null);
+                }}
+                onConfirm={handleDelete}
+                title={t('common.delete')}
+                message={t('common.confirmDelete')}
+                confirmLabel={t('common.delete')}
+                variant="danger"
+                loading={deleteMutation.isPending}
+            />
 
             {/* Create Modal */}
             <Modal
@@ -284,6 +407,6 @@ export default function ResourceAllocationList() {
                     />
                 )}
             </Modal>
-        </div>
+        </Box>
     );
 }

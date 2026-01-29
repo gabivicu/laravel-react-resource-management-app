@@ -1,41 +1,31 @@
-import { Link } from 'react-router-dom';
+import {
+    Box,
+    Grid,
+    Typography,
+    Card,
+    CardContent,
+    LinearProgress,
+    Skeleton,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+    Folder as ProjectIcon,
+    Assignment as TaskIcon,
+    People as UserIcon,
+    TrendingUp as TrendIcon,
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '@/services/analytics';
 import { projectService } from '@/services/projects';
 import { taskService } from '@/services/tasks';
-import StatCard from '@/components/dashboard/StatCard';
-import ProgressBar from '@/components/dashboard/ProgressBar';
+import { StatCard } from '@/components/ui';
 import MiniChart from '@/components/dashboard/MiniChart';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 
-// SVG Icons
-const ProjectIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-    </svg>
-);
-
-const TaskIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-    </svg>
-);
-
-const UserIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-);
-
-const ResourceIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-    </svg>
-);
-
 export default function Dashboard() {
     const { t } = useTranslation();
+    
     const { data: dashboardStats, isLoading: statsLoading } = useQuery({
         queryKey: ['analytics', 'dashboard'],
         queryFn: () => analyticsService.getDashboardStats(),
@@ -113,115 +103,204 @@ export default function Dashboard() {
             updatedAt: t.updated_at,
         })) || [];
 
-    if (statsLoading || projectStatsLoading || taskStatsLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
+    const isLoading = statsLoading || projectStatsLoading || taskStatsLoading;
 
     return (
-        <div className="space-y-6 animate-fadeIn">
+        <Box sx={{ animation: 'fadeIn 0.5s ease-out' }}>
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.title')}</h1>
-                    <p className="text-gray-600 dark:text-gray-400 mt-1">{t('dashboard.welcomeBack')}</p>
-                </div>
-                <Link
-                    to="/projects/create"
-                    className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+            <Box sx={{ mb: 4 }}>
+                <Typography
+                    variant="h3"
+                    fontWeight={700}
+                    sx={{
+                        background: (theme) =>
+                            theme.palette.mode === 'dark'
+                                ? 'linear-gradient(135deg, #F8FAFC 0%, #94A3B8 100%)'
+                                : 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                    }}
                 >
-                    + {t('dashboard.newProject')}
-                </Link>
-            </div>
+                    {t('dashboard.title')}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {t('dashboard.welcomeBack')}
+                </Typography>
+            </Box>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title={t('dashboard.projects')}
-                    value={projectsCount}
-                    icon={<ProjectIcon />}
-                    color="blue"
-                    link="/projects"
-                />
-                <StatCard
-                    title={t('dashboard.tasks')}
-                    value={tasksCount}
-                    icon={<TaskIcon />}
-                    color="green"
-                    link="/tasks"
-                />
-                <StatCard
-                    title={t('dashboard.teamMembers')}
-                    value={usersCount}
-                    icon={<UserIcon />}
-                    color="purple"
-                    link="/users"
-                />
-                <StatCard
-                    title={t('dashboard.activeAllocations')}
-                    value={allocationsCount}
-                    icon={<ResourceIcon />}
-                    color="orange"
-                    link="/resource-allocations"
-                />
-            </div>
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('dashboard.projects')}
+                        value={projectsCount}
+                        icon={<ProjectIcon />}
+                        color="primary"
+                        link="/projects"
+                        loading={isLoading}
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('dashboard.tasks')}
+                        value={tasksCount}
+                        icon={<TaskIcon />}
+                        color="success"
+                        link="/tasks"
+                        loading={isLoading}
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('dashboard.teamMembers')}
+                        value={usersCount}
+                        icon={<UserIcon />}
+                        color="info"
+                        link="/users"
+                        loading={isLoading}
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('dashboard.activeAllocations')}
+                        value={allocationsCount}
+                        icon={<TrendIcon />}
+                        color="warning"
+                        link="/resource-allocations"
+                        loading={isLoading}
+                    />
+                </Grid>
+            </Grid>
 
-            {/* Charts and Progress Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Task Status Chart */}
-                {taskStatusData.length > 0 && (
-                    <MiniChart data={taskStatusData} title={t('dashboard.tasksByStatus')} />
+            {/* Charts Section */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+                {isLoading ? (
+                    <>
+                        {[1, 2, 3].map((i) => (
+                            <Grid size={{ xs: 12, lg: 4 }} key={i}>
+                                <Card>
+                                    <CardContent>
+                                        <Skeleton variant="text" width="60%" height={28} />
+                                        <Skeleton variant="rectangular" height={200} sx={{ mt: 2 }} />
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        {taskStatusData.length > 0 && (
+                            <Grid size={{ xs: 12, lg: 4 }}>
+                                <MiniChart data={taskStatusData} title={t('dashboard.tasksByStatus')} />
+                            </Grid>
+                        )}
+                        {taskPriorityData.length > 0 && (
+                            <Grid size={{ xs: 12, lg: 4 }}>
+                                <MiniChart data={taskPriorityData} title={t('dashboard.tasksByPriority')} />
+                            </Grid>
+                        )}
+                        {projectStatusData.length > 0 && (
+                            <Grid size={{ xs: 12, lg: 4 }}>
+                                <MiniChart data={projectStatusData} title={t('dashboard.projectsByStatus')} />
+                            </Grid>
+                        )}
+                    </>
                 )}
-
-                {/* Task Priority Chart */}
-                {taskPriorityData.length > 0 && (
-                    <MiniChart data={taskPriorityData} title={t('dashboard.tasksByPriority')} />
-                )}
-
-                {/* Project Status Chart */}
-                {projectStatusData.length > 0 && (
-                    <MiniChart data={projectStatusData} title={t('dashboard.projectsByStatus')} />
-                )}
-            </div>
+            </Grid>
 
             {/* Progress and Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Grid container spacing={3}>
                 {/* Task Completion Progress */}
-                <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.taskProgress')}</h3>
-                    <div className="space-y-4">
-                        <ProgressBar
-                            label={t('dashboard.completionRate')}
-                            value={completionRate}
-                            max={100}
-                            color="green"
-                        />
-                        <div className="pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 dark:text-gray-400">{t('dashboard.estimatedHours')}</span>
-                                <span className="font-medium text-gray-900 dark:text-white">
-                                    {totalEstimated.toFixed(1)}h
-                                </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 dark:text-gray-400">{t('dashboard.actualHours')}</span>
-                                <span className="font-medium text-gray-900 dark:text-white">
-                                    {totalActual.toFixed(1)}h
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <Grid size={{ xs: 12, lg: 4 }}>
+                    <Card sx={{ height: '100%' }}>
+                        <CardContent>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>
+                                {t('dashboard.taskProgress')}
+                            </Typography>
+
+                            {isLoading ? (
+                                <>
+                                    <Skeleton variant="text" width="80%" />
+                                    <Skeleton variant="rectangular" height={8} sx={{ my: 2 }} />
+                                    <Skeleton variant="text" width="60%" />
+                                    <Skeleton variant="text" width="50%" />
+                                </>
+                            ) : (
+                                <Box sx={{ mt: 3 }}>
+                                    {/* Completion Rate */}
+                                    <Box sx={{ mb: 3 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {t('dashboard.completionRate')}
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={600} color="success.main">
+                                                {completionRate.toFixed(0)}%
+                                            </Typography>
+                                        </Box>
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={completionRate}
+                                            sx={{
+                                                height: 10,
+                                                borderRadius: 5,
+                                                backgroundColor: (theme) =>
+                                                    alpha(theme.palette.success.main, 0.15),
+                                                '& .MuiLinearProgress-bar': {
+                                                    borderRadius: 5,
+                                                    background: 'linear-gradient(90deg, #10B981 0%, #34D399 100%)',
+                                                },
+                                            }}
+                                        />
+                                    </Box>
+
+                                    {/* Hours Stats */}
+                                    <Box
+                                        sx={{
+                                            pt: 2,
+                                            borderTop: 1,
+                                            borderColor: 'divider',
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                mb: 1.5,
+                                            }}
+                                        >
+                                            <Typography variant="body2" color="text.secondary">
+                                                {t('dashboard.estimatedHours')}
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {totalEstimated.toFixed(1)}h
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {t('dashboard.actualHours')}
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {totalActual.toFixed(1)}h
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
 
                 {/* Recent Projects */}
-                <RecentActivity items={recentProjectsList} type="projects" />
+                <Grid size={{ xs: 12, lg: 4 }}>
+                    <RecentActivity items={recentProjectsList} type="projects" loading={isLoading} />
+                </Grid>
 
                 {/* Recent Tasks */}
-                <RecentActivity items={recentTasksList} type="tasks" />
-            </div>
-        </div>
+                <Grid size={{ xs: 12, lg: 4 }}>
+                    <RecentActivity items={recentTasksList} type="tasks" loading={isLoading} />
+                </Grid>
+            </Grid>
+        </Box>
     );
 }

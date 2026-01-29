@@ -3,9 +3,12 @@ const { defineConfig } = require("cypress");
 module.exports = defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost',
+    env: {
+      API_BASE_URL: process.env.CYPRESS_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost/api/v1',
+    },
     viewportWidth: 1280,
     viewportHeight: 720,
-    video: true,
+    video: false,
     screenshotOnRunFailure: true,
     defaultCommandTimeout: 10000,
     requestTimeout: 10000,

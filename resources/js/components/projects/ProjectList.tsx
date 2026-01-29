@@ -1,48 +1,70 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { projectService, ProjectListResponse } from '@/services/projects';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import {
+    Box,
+    Card,
+    CardContent,
+    Typography,
+    Button,
+    IconButton,
+    Grid,
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel,
+    Tooltip,
+    Skeleton,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+    Add as AddIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
+    Visibility as ViewIcon,
+    CalendarToday as CalendarIcon,
+    AttachMoney as BudgetIcon,
+} from '@mui/icons-material';
 import Modal from '@/components/ui/Modal';
 import ProjectForm from './ProjectForm';
 import ProjectDetailsModal from './ProjectDetailsModal';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
 import useDebounce from '@/hooks/useDebounce';
-
-const statusColors = {
-    planning: 'bg-gray-100 text-gray-800',
-    active: 'bg-green-100 text-green-800',
-    on_hold: 'bg-yellow-100 text-yellow-800',
-    completed: 'bg-blue-100 text-blue-800',
-    cancelled: 'bg-red-100 text-red-800',
-};
+import { PageHeader, StatusChip, EmptyState, SearchInput, ConfirmDialog } from '@/components/ui';
 
 export default function ProjectList() {
     const { t } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 300);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [keyboardIndex, setKeyboardIndex] = useState(-1);
     
     const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
     const [viewingProjectId, setViewingProjectId] = useState<number | null>(null);
+    const [deletingProjectId, setDeletingProjectId] = useState<number | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     
-    const searchContainerRef = useRef<HTMLDivElement>(null);
-    const suggestionsListRef = useRef<HTMLUListElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
     // Fetch suggestions
     const { data: suggestionsData } = useQuery({
         queryKey: ['projects-suggestions', debouncedSearch],
         queryFn: () => projectService.getProjects({ search: debouncedSearch }, 1, 5),
-        enabled: debouncedSearch.length > 1 && showSuggestions,
+        enabled: debouncedSearch.length > 1,
     });
 
-    const suggestions = useMemo(() => suggestionsData?.data || [], [suggestionsData?.data]);
+    const suggestions = useMemo(
+        () =>
+            suggestionsData?.data.map((p) => ({
+                id: p.id,
+                label: p.name,
+                secondary: p.status,
+            })) || [],
+        [suggestionsData?.data]
+    );
 
     const {
         data,
@@ -53,13 +75,14 @@ export default function ProjectList() {
         isError,
     } = useInfiniteQuery<ProjectListResponse>({
         queryKey: ['projects', statusFilter, debouncedSearch],
-        queryFn: ({ pageParam }) => projectService.getProjects(
-            {
-                ...(statusFilter ? { status: statusFilter as any } : {}),
-                ...(debouncedSearch ? { search: debouncedSearch } : {}),
-            },
-            pageParam as number
-        ),
+        queryFn: ({ pageParam }) =>
+            projectService.getProjects(
+                {
+                    ...(statusFilter ? { status: statusFilter as any } : {}),
+                    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+                },
+                pageParam as number
+            ),
         initialPageParam: 1,
         getNextPageParam: (lastPage) => {
             const { current_page, last_page } = lastPage.pagination || {};
@@ -74,81 +97,6 @@ export default function ProjectList() {
         rootMargin: '200px',
     });
 
-    // Reset keyboard index when suggestions change
-    useEffect(() => {
-        setKeyboardIndex(-1);
-    }, [suggestions]);
-
-    // Close suggestions on click outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-                setShowSuggestions(false);
-                setKeyboardIndex(-1);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    // Scroll to highlighted item
-    const scrollToIndex = (index: number) => {
-        if (suggestionsListRef.current && index >= 0) {
-            const items = suggestionsListRef.current.querySelectorAll('li');
-            const item = items[index];
-            if (item) {
-                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-        }
-    };
-
-    // Handle keyboard navigation
-    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (!showSuggestions || suggestions.length === 0) {
-            if (e.key === 'ArrowDown' && debouncedSearch.length > 1) {
-                setShowSuggestions(true);
-            }
-            return;
-        }
-
-        switch (e.key) {
-            case 'ArrowDown':
-                e.preventDefault();
-                setKeyboardIndex((prev) => {
-                    const nextIndex = prev < suggestions.length - 1 ? prev + 1 : prev;
-                    scrollToIndex(nextIndex);
-                    return nextIndex;
-                });
-                break;
-            case 'ArrowUp':
-                e.preventDefault();
-                setKeyboardIndex((prev) => {
-                    const nextIndex = prev > 0 ? prev - 1 : -1;
-                    scrollToIndex(nextIndex);
-                    return nextIndex;
-                });
-                break;
-            case 'Enter':
-                e.preventDefault();
-                if (keyboardIndex >= 0 && keyboardIndex < suggestions.length) {
-                    const selectedProject = suggestions[keyboardIndex];
-                    setSearchQuery(selectedProject.name);
-                    setShowSuggestions(false);
-                    setKeyboardIndex(-1);
-                }
-                break;
-            case 'Escape':
-                e.preventDefault();
-                setShowSuggestions(false);
-                setKeyboardIndex(-1);
-                searchInputRef.current?.blur();
-                break;
-        }
-    };
-
     useEffect(() => {
         if (isLoadMoreVisible && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
@@ -159,6 +107,8 @@ export default function ProjectList() {
         mutationFn: projectService.deleteProject,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
+            setIsDeleteDialogOpen(false);
+            setDeletingProjectId(null);
         },
     });
 
@@ -170,6 +120,11 @@ export default function ProjectList() {
     const openViewModal = (projectId: number) => {
         setViewingProjectId(projectId);
         setIsViewModalOpen(true);
+    };
+
+    const openDeleteDialog = (projectId: number) => {
+        setDeletingProjectId(projectId);
+        setIsDeleteDialogOpen(true);
     };
 
     const closeModals = () => {
@@ -184,238 +139,282 @@ export default function ProjectList() {
 
     const projects = data?.pages.flatMap((page) => page.data) || [];
 
-    const getStatusLabel = (status: string): string => {
-        switch (status) {
-            case 'planning':
-                return t('projects.statusPlanning');
-            case 'active':
-                return t('projects.statusActive');
-            case 'on_hold':
-                return t('projects.statusOnHold');
-            case 'completed':
-                return t('projects.statusCompleted');
-            case 'cancelled':
-                return t('projects.statusCancelled');
-            default:
-                return status.replace('_', ' ');
-        }
-    };
-
     return (
-        <div className="w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-gray-900">{t('projects.title')}</h2>
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md w-full sm:w-auto"
-                >
-                    + {t('projects.newProject')}
-                </button>
-            </div>
+        <Box>
+            <PageHeader
+                title={t('projects.title')}
+                subtitle={`${projects.length} projects`}
+                action={{
+                    label: t('projects.newProject'),
+                    onClick: () => setIsCreateModalOpen(true),
+                    icon: <AddIcon />,
+                }}
+            />
 
-            {/* Filters & Search */}
-            <div className="mb-6 flex flex-col sm:flex-row gap-4">
-                {/* Search Bar */}
-                <div className="relative flex-1" ref={searchContainerRef}>
-                    <div className="relative">
-                        <input
-                            ref={searchInputRef}
-                            type="text"
-                            placeholder={t('projects.searchProjects')}
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setShowSuggestions(true);
-                                setKeyboardIndex(-1);
-                            }}
-                            onKeyDown={handleSearchKeyDown}
-                            onFocus={() => setShowSuggestions(true)}
-                            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        <svg
-                            className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                        </svg>
-                        {searchQuery && (
-                            <button
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setShowSuggestions(false);
-                                    setKeyboardIndex(-1);
-                                }}
-                                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                            >
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Suggestions Dropdown */}
-                    {showSuggestions && suggestions.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            <ul ref={suggestionsListRef}>
-                                {suggestions.map((project, index) => (
-                                    <li
-                                        key={project.id}
-                                        onClick={() => {
-                                            setSearchQuery(project.name);
-                                            setShowSuggestions(false);
-                                            setKeyboardIndex(-1);
-                                        }}
-                                        className={`px-4 py-2 cursor-pointer text-sm text-gray-700 flex justify-between items-center ${
-                                            index === keyboardIndex 
-                                                ? 'bg-blue-50 border-l-2 border-blue-500' 
-                                                : 'hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        <span>{project.name}</span>
-                                        <span className={`text-xs px-2 py-0.5 rounded ${statusColors[project.status]}`}>
-                                            {project.status}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </div>
-
-                {/* Status Filter */}
-                <div className="w-full sm:w-48">
-                    <select
+            {/* Filters */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 2,
+                    mb: 4,
+                }}
+            >
+                <Box sx={{ flex: 1 }}>
+                    <SearchInput
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        placeholder={t('projects.searchProjects')}
+                        suggestions={suggestions}
+                        onSelect={(item) => setSearchQuery(item.label)}
+                    />
+                </Box>
+                <FormControl sx={{ minWidth: { xs: '100%', sm: 200 } }} size="small">
+                    <InputLabel>{t('projects.allStatuses')}</InputLabel>
+                    <Select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        label={t('projects.allStatuses')}
                     >
-                        <option value="">{t('projects.allStatuses')}</option>
-                        <option value="planning">{t('projects.statusPlanning')}</option>
-                        <option value="active">{t('projects.statusActive')}</option>
-                        <option value="on_hold">{t('projects.statusOnHold')}</option>
-                        <option value="completed">{t('projects.statusCompleted')}</option>
-                        <option value="cancelled">{t('projects.statusCancelled')}</option>
-                    </select>
-                </div>
-            </div>
+                        <MenuItem value="">{t('projects.allStatuses')}</MenuItem>
+                        <MenuItem value="planning">{t('projects.statusPlanning')}</MenuItem>
+                        <MenuItem value="active">{t('projects.statusActive')}</MenuItem>
+                        <MenuItem value="on_hold">{t('projects.statusOnHold')}</MenuItem>
+                        <MenuItem value="completed">{t('projects.statusCompleted')}</MenuItem>
+                        <MenuItem value="cancelled">{t('projects.statusCancelled')}</MenuItem>
+                    </Select>
+                </FormControl>
+            </Box>
 
             {/* Projects Grid */}
             {isLoading ? (
-                <div className="flex items-center justify-center p-8">
-                    <div className="text-gray-500">{t('common.loading')}</div>
-                </div>
+                <Grid container spacing={3} data-testid="loading-skeletons">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <Grid size={{ xs: 12, md: 6, lg: 4 }} key={i}>
+                            <Card>
+                                <CardContent>
+                                    <Skeleton variant="text" width="70%" height={28} />
+                                    <Skeleton variant="rounded" width={80} height={24} sx={{ my: 1 }} />
+                                    <Skeleton variant="text" width="90%" />
+                                    <Skeleton variant="text" width="60%" />
+                                    <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                                        <Skeleton variant="rounded" width="100%" height={36} />
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ))}
+                </Grid>
             ) : isError ? (
-                <div className="p-4 bg-red-50 text-red-600 rounded">
-                    {t('common.error')}
-                </div>
+                <EmptyState
+                    type="error"
+                    title={t('common.error')}
+                    description="Failed to load projects. Please try again."
+                    action={{
+                        label: 'Retry',
+                        onClick: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
+                    }}
+                />
             ) : projects.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">{t('projects.noProjectsFound')}</p>
-                    {searchQuery || statusFilter ? (
-                        <button
-                            onClick={() => {
-                                setSearchQuery('');
-                                setStatusFilter('');
-                            }}
-                            className="text-blue-600 hover:text-blue-700"
-                        >
-                            {t('common.clear')}
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="text-blue-600 hover:text-blue-700"
-                        >
-                            {t('projects.createFirstProject')}
-                        </button>
-                    )}
-                </div>
+                <EmptyState
+                    type="projects"
+                    action={
+                        searchQuery || statusFilter
+                            ? {
+                                  label: t('common.clear') || 'Clear filters',
+                                  onClick: () => {
+                                      setSearchQuery('');
+                                      setStatusFilter('');
+                                  },
+                              }
+                            : {
+                                  label: t('projects.createFirstProject') || 'Create first project',
+                                  onClick: () => setIsCreateModalOpen(true),
+                              }
+                    }
+                />
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {projects.map((project) => (
-                            <div
+                    <Grid container spacing={3}>
+                        {projects.map((project, index) => (
+                            <Grid 
+                                size={{ xs: 12, md: 6, lg: 4 }} 
                                 key={project.id}
-                                className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow flex flex-col h-full"
+                                sx={{
+                                    animation: 'fadeInUp 0.4s ease-out',
+                                    animationDelay: `${(index % 6) * 50}ms`,
+                                    animationFillMode: 'backwards',
+                                }}
                             >
-                                <div className="flex justify-between items-start mb-4">
-                                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-1" title={project.name}>
-                                        {project.name}
-                                    </h3>
-                                    <span
-                                        className={`px-2 py-1 text-xs rounded whitespace-nowrap ml-2 ${
-                                            statusColors[project.status]
-                                        }`}
-                                    >
-                                        {getStatusLabel(project.status)}
-                                    </span>
-                                </div>
+                                <Card
+                                    sx={{
+                                        height: '100%',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            transform: 'translateY(-4px)',
+                                            boxShadow: (theme) => theme.shadows[8],
+                                        },
+                                    }}
+                                >
+                                    <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        {/* Header */}
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'flex-start',
+                                                mb: 2,
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="h6"
+                                                fontWeight={600}
+                                                sx={{
+                                                    flex: 1,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    mr: 1,
+                                                }}
+                                                title={project.name}
+                                            >
+                                                {project.name}
+                                            </Typography>
+                                            <StatusChip status={project.status} />
+                                        </Box>
 
-                                {project.description && (
-                                    <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-grow">
-                                        {project.description}
-                                    </p>
-                                )}
+                                        {/* Description */}
+                                        {project.description && (
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                                sx={{
+                                                    mb: 2,
+                                                    flex: 1,
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                {project.description}
+                                            </Typography>
+                                        )}
 
-                                <div className="flex gap-2 text-sm text-gray-500 mb-4">
-                                    {project.start_date && (
-                                        <span>{t('projects.startDate')}: {new Date(project.start_date).toLocaleDateString()}</span>
-                                    )}
-                                </div>
+                                        {/* Meta Info */}
+                                        <Box sx={{ mb: 2 }}>
+                                            {project.start_date && (
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        color: 'text.secondary',
+                                                        mb: 0.5,
+                                                    }}
+                                                >
+                                                    <CalendarIcon sx={{ fontSize: 16 }} />
+                                                    <Typography variant="body2">
+                                                        {new Date(project.start_date).toLocaleDateString()}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                            {project.budget && (
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        color: 'success.main',
+                                                    }}
+                                                >
+                                                    <BudgetIcon sx={{ fontSize: 16 }} />
+                                                    <Typography variant="body2" fontWeight={600}>
+                                                        ${project.budget.toLocaleString()}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </Box>
 
-                                {project.budget && (
-                                    <div className="text-sm font-medium mb-4">
-                                        {t('projects.budget')}: ${project.budget.toLocaleString()}
-                                    </div>
-                                )}
-
-                                <div className="flex gap-2 mt-auto">
-                                    <button
-                                        onClick={() => openViewModal(project.id)}
-                                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded text-center hover:bg-blue-100 transition-colors"
-                                    >
-                                        {t('projects.viewProject')}
-                                    </button>
-                                    <button
-                                        onClick={() => openEditModal(project.id)}
-                                        className="flex-1 px-3 py-2 bg-gray-50 text-gray-700 rounded text-center hover:bg-gray-100 transition-colors"
-                                    >
-                                        {t('common.edit')}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (confirm(t('common.confirm'))) {
-                                                deleteMutation.mutate(project.id);
-                                            }
-                                        }}
-                                        className="px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
-                                        disabled={deleteMutation.isPending}
-                                    >
-                                        {deleteMutation.isPending ? '...' : t('common.delete')}
-                                    </button>
-                                </div>
-                            </div>
+                                        {/* Actions */}
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                gap: 1,
+                                                mt: 'auto',
+                                                pt: 2,
+                                                borderTop: 1,
+                                                borderColor: 'divider',
+                                            }}
+                                        >
+                                            <Button
+                                                variant="contained"
+                                                size="small"
+                                                startIcon={<ViewIcon />}
+                                                onClick={() => openViewModal(project.id)}
+                                                sx={{ flex: 1 }}
+                                            >
+                                                View
+                                            </Button>
+                                            <Tooltip title={t('common.edit')}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => openEditModal(project.id)}
+                                                    sx={{
+                                                        backgroundColor: (theme) =>
+                                                            alpha(theme.palette.info.main, 0.1),
+                                                        color: 'info.main',
+                                                        '&:hover': {
+                                                            backgroundColor: (theme) =>
+                                                                alpha(theme.palette.info.main, 0.2),
+                                                        },
+                                                    }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title={t('common.delete')}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => openDeleteDialog(project.id)}
+                                                    sx={{
+                                                        backgroundColor: (theme) =>
+                                                            alpha(theme.palette.error.main, 0.1),
+                                                        color: 'error.main',
+                                                        '&:hover': {
+                                                            backgroundColor: (theme) =>
+                                                                alpha(theme.palette.error.main, 0.2),
+                                                        },
+                                                    }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
                         ))}
-                    </div>
-                    
+                    </Grid>
+
                     {/* Infinite Scroll Sensor */}
-                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                    <Box ref={loadMoreRef} sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
                         {isFetchingNextPage ? (
-                            <div className="text-gray-500 animate-pulse">{t('common.loading')}</div>
+                            <Typography color="text.secondary">{t('common.loading')}</Typography>
                         ) : hasNextPage ? (
-                            <div className="text-gray-400 text-sm">{t('common.scrollToLoadMore')}</div>
+                            <Typography variant="body2" color="text.secondary">
+                                {t('common.scrollToLoadMore')}
+                            </Typography>
                         ) : (
-                            projects.length > 0 && <div className="text-gray-400 text-sm">{t('projects.noMoreProjects')}</div>
+                            projects.length > 0 && (
+                                <Typography variant="body2" color="text.secondary">
+                                    {t('projects.noMoreProjects')}
+                                </Typography>
+                            )
                         )}
-                    </div>
+                    </Box>
                 </>
             )}
 
@@ -425,10 +424,7 @@ export default function ProjectList() {
                 onClose={closeModals}
                 title={t('projects.createProject')}
             >
-                <ProjectForm
-                    onSuccess={closeModals}
-                    onCancel={closeModals}
-                />
+                <ProjectForm onSuccess={closeModals} onCancel={closeModals} />
             </Modal>
 
             {/* Edit Project Modal */}
@@ -452,6 +448,18 @@ export default function ProjectList() {
                 isOpen={isViewModalOpen}
                 onClose={closeModals}
             />
-        </div>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={() => deletingProjectId && deleteMutation.mutate(deletingProjectId)}
+                title="Delete Project"
+                message="Are you sure you want to delete this project? This action cannot be undone."
+                confirmLabel="Delete"
+                variant="danger"
+                loading={deleteMutation.isPending}
+            />
+        </Box>
     );
 }

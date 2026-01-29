@@ -74,82 +74,114 @@ jobs:
           cache: 'npm'
 
       - name: Clear npm cache (if needed)
-        run: |
-          echo "Clearing npm cache to ensure clean install..."
-          npm cache clean --force || true
+        run: npm cache clean --force || true
 
       - name: Install npm dependencies
         run: |
-          echo "Installing npm dependencies..."
           if [ -f package-lock.json ]; then
             npm ci --prefer-offline --no-audit --legacy-peer-deps
           else
             npm install --prefer-offline --no-audit --legacy-peer-deps
           fi
           
+          if [ ! -d "node_modules" ]; then
+            exit 1
+          fi
+          
       - name: List installed MUI packages
         run: |
-          echo "Checking installed MUI packages..."
-          ls -la node_modules/@mui/ 2>/dev/null || echo "No @mui directory found"
-          ls -la node_modules/@mui/material 2>/dev/null || echo "@mui/material not found"
-          ls -la node_modules/@mui/icons-material 2>/dev/null || echo "@mui/icons-material not found"
-          ls -la node_modules/@mui/x-date-pickers 2>/dev/null || echo "@mui/x-date-pickers not found"
+          if [ -d "node_modules/@mui" ]; then
+            ls -la node_modules/@mui/ | head -20
+            ls -la node_modules/@mui/material 2>/dev/null || true
+            ls -la node_modules/@mui/icons-material 2>/dev/null || true
+            ls -la node_modules/@mui/x-date-pickers 2>/dev/null || true
+          else
+            find node_modules -type d -name "@mui" 2>/dev/null | head -10
+          fi
 
       - name: Verify MUI dependencies are installed
         id: verify-mui
         run: |
-          if [ ! -d "node_modules/@mui/material" ] || [ ! -d "node_modules/@mui/icons-material" ] || [ ! -d "node_modules/@mui/x-date-pickers" ]; then
-            echo "⚠ MUI dependencies missing, attempting to reinstall..."
+          MISSING=0
+          
+          if [ ! -d "node_modules/@mui/material" ]; then
+            MISSING=1
+          fi
+          
+          if [ ! -d "node_modules/@mui/icons-material" ]; then
+            MISSING=1
+          fi
+          
+          if [ ! -d "node_modules/@mui/x-date-pickers" ]; then
+            MISSING=1
+          fi
+          
+          if [ $MISSING -eq 1 ]; then
             echo "missing=true" >> $GITHUB_OUTPUT
           else
-            echo "✓ All MUI dependencies are installed"
             echo "missing=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Reinstall dependencies if MUI is missing
         if: steps.verify-mui.outputs.missing == 'true'
         run: |
-          echo "Clearing npm cache and reinstalling dependencies..."
           npm cache clean --force
-          rm -rf node_modules package-lock.json
-          npm install --legacy-peer-deps
+          rm -rf node_modules
+          grep -E "@mui/(material|icons-material|x-date-pickers)" package.json || true
           
-          # Verify again after reinstall
+          if [ -f package-lock.json ]; then
+            npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          else
+            npm install --legacy-peer-deps
+          fi
+          
+          if [ ! -d "node_modules" ]; then
+            exit 1
+          fi
+          
+          if [ -d "node_modules/@mui" ]; then
+            ls -la node_modules/@mui/ | head -20
+          else
+            find node_modules -type d -name "@mui" 2>/dev/null | head -10
+            ls -la node_modules/ | grep -E "^d" | head -20
+            exit 1
+          fi
+          
+          MISSING_PACKAGES=0
+          
           if [ ! -d "node_modules/@mui/material" ]; then
-            echo "Error: @mui/material still not found after reinstall"
-            exit 1
+            MISSING_PACKAGES=$((MISSING_PACKAGES + 1))
           fi
+          
           if [ ! -d "node_modules/@mui/icons-material" ]; then
-            echo "Error: @mui/icons-material still not found after reinstall"
-            exit 1
+            MISSING_PACKAGES=$((MISSING_PACKAGES + 1))
           fi
+          
           if [ ! -d "node_modules/@mui/x-date-pickers" ]; then
-            echo "Error: @mui/x-date-pickers still not found after reinstall"
+            MISSING_PACKAGES=$((MISSING_PACKAGES + 1))
+          fi
+          
+          if [ $MISSING_PACKAGES -gt 0 ]; then
+            cat package.json | grep -A 20 '"dependencies"'
             exit 1
           fi
-          echo "✓ All MUI dependencies are now installed"
 
       - name: Verify TypeScript can resolve MUI modules
         run: |
-          echo "Verifying TypeScript can resolve MUI modules..."
           node -e "
             try {
               require.resolve('@mui/material');
               require.resolve('@mui/icons-material');
               require.resolve('@mui/x-date-pickers');
-              console.log('✓ All MUI modules can be resolved by Node.js');
             } catch (e) {
-              console.error('✗ Error resolving MUI modules:', e.message);
+              console.error('Error resolving MUI modules:', e.message);
               process.exit(1);
             }
           "
 
       - name: Check TypeScript configuration
         run: |
-          echo "Checking TypeScript configuration..."
           cat tsconfig.json
-          echo ""
-          echo "Checking if TypeScript can find type definitions..."
           npx tsc --showConfig 2>&1 | head -20 || true
 
       - name: Run TypeScript type check
@@ -176,13 +208,10 @@ jobs:
           cache: 'npm'
 
       - name: Clear npm cache (if needed)
-        run: |
-          echo "Clearing npm cache to ensure clean install..."
-          npm cache clean --force || true
+        run: npm cache clean --force || true
 
       - name: Install npm dependencies
         run: |
-          echo "Installing npm dependencies..."
           if [ -f package-lock.json ]; then
             npm ci --prefer-offline --no-audit --legacy-peer-deps
           else
@@ -191,45 +220,63 @@ jobs:
           
       - name: List installed MUI packages
         run: |
-          echo "Checking installed MUI packages..."
-          ls -la node_modules/@mui/ 2>/dev/null || echo "No @mui directory found"
-          ls -la node_modules/@mui/material 2>/dev/null || echo "@mui/material not found"
-          ls -la node_modules/@mui/icons-material 2>/dev/null || echo "@mui/icons-material not found"
-          ls -la node_modules/@mui/x-date-pickers 2>/dev/null || echo "@mui/x-date-pickers not found"
+          ls -la node_modules/@mui/ 2>/dev/null || true
+          ls -la node_modules/@mui/material 2>/dev/null || true
+          ls -la node_modules/@mui/icons-material 2>/dev/null || true
+          ls -la node_modules/@mui/x-date-pickers 2>/dev/null || true
 
       - name: Verify MUI dependencies are installed
         id: verify-mui-build
         run: |
           if [ ! -d "node_modules/@mui/material" ] || [ ! -d "node_modules/@mui/icons-material" ] || [ ! -d "node_modules/@mui/x-date-pickers" ]; then
-            echo "⚠ MUI dependencies missing, attempting to reinstall..."
             echo "missing=true" >> $GITHUB_OUTPUT
           else
-            echo "✓ All MUI dependencies are installed"
             echo "missing=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Reinstall dependencies if MUI is missing
         if: steps.verify-mui-build.outputs.missing == 'true'
         run: |
-          echo "Clearing npm cache and reinstalling dependencies..."
           npm cache clean --force
-          rm -rf node_modules package-lock.json
-          npm install --legacy-peer-deps
+          rm -rf node_modules
+          grep -E "@mui/(material|icons-material|x-date-pickers)" package.json || true
           
-          # Verify again after reinstall
+          if [ -f package-lock.json ]; then
+            npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          else
+            npm install --legacy-peer-deps
+          fi
+          
+          if [ ! -d "node_modules" ]; then
+            exit 1
+          fi
+          
+          if [ -d "node_modules/@mui" ]; then
+            ls -la node_modules/@mui/ | head -20
+          else
+            find node_modules -type d -name "@mui" 2>/dev/null | head -10
+            ls -la node_modules/ | grep -E "^d" | head -20
+            exit 1
+          fi
+          
+          MISSING_PACKAGES=0
+          
           if [ ! -d "node_modules/@mui/material" ]; then
-            echo "Error: @mui/material still not found after reinstall"
-            exit 1
+            MISSING_PACKAGES=$((MISSING_PACKAGES + 1))
           fi
+          
           if [ ! -d "node_modules/@mui/icons-material" ]; then
-            echo "Error: @mui/icons-material still not found after reinstall"
-            exit 1
+            MISSING_PACKAGES=$((MISSING_PACKAGES + 1))
           fi
+          
           if [ ! -d "node_modules/@mui/x-date-pickers" ]; then
-            echo "Error: @mui/x-date-pickers still not found after reinstall"
+            MISSING_PACKAGES=$((MISSING_PACKAGES + 1))
+          fi
+          
+          if [ $MISSING_PACKAGES -gt 0 ]; then
+            cat package.json | grep -A 20 '"dependencies"'
             exit 1
           fi
-          echo "✓ All MUI dependencies are now installed"
 
       - name: Build frontend
         run: npm run build

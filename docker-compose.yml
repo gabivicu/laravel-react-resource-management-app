@@ -56,6 +56,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9000 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -141,7 +146,10 @@ services:
       - resource_management_network
     environment:
       - CYPRESS_BASE_URL=http://nginx:80
+      - CYPRESS_API_BASE_URL=http://nginx/api/v1
+      - API_BASE_URL=http://nginx/api/v1
       - DOCKER=true
+      - APP_ENV=testing
     depends_on:
       - nginx
 
@@ -160,8 +168,15 @@ services:
     networks:
       - resource_management_network
     depends_on:
-      - app
-      - node
+      app:
+        condition: service_healthy
+      node:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Laravel Queue Worker
   queue:

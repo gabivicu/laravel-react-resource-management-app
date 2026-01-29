@@ -2,11 +2,32 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/auth';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+    Box,
+    Card,
+    CardContent,
+    Typography,
+    TextField,
+    Button,
+    Alert,
+    InputAdornment,
+    IconButton,
+    Divider,
+    CircularProgress,
+} from '@mui/material';
+import {
+    Email as EmailIcon,
+    Lock as LockIcon,
+    Visibility as VisibilityIcon,
+    VisibilityOff as VisibilityOffIcon,
+    Login as LoginIcon,
+} from '@mui/icons-material';
 
 export default function Login() {
     const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuthStore();
@@ -28,52 +49,199 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold mb-6 text-center">{t('auth.login')}</h2>
+        <Box
+            sx={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 2,
+                background: (theme) =>
+                    theme.palette.mode === 'dark'
+                        ? `
+                            radial-gradient(at 40% 20%, rgba(255, 193, 7, 0.08) 0px, transparent 50%),
+                            radial-gradient(at 80% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+                            radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+                            linear-gradient(135deg, #0C0F14 0%, #151921 50%, #1E293B 100%)
+                        `
+                        : `
+                            radial-gradient(at 40% 20%, rgba(255, 193, 7, 0.15) 0px, transparent 50%),
+                            radial-gradient(at 80% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                            linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)
+                        `,
+            }}
+        >
+            <Box
+                sx={{
+                    width: '100%',
+                    maxWidth: 440,
+                    animation: 'fadeInUp 0.5s ease-out',
+                }}
+            >
+                {/* Logo */}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        mb: 4,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: 72,
+                            height: 72,
+                            borderRadius: 3,
+                            background: 'linear-gradient(135deg, #FFC107 0%, #FF8F00 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 12px 40px rgba(255, 193, 7, 0.35)',
+                            mb: 2,
+                        }}
+                    >
+                        <Typography variant="h4" fontWeight={800} sx={{ color: '#0F172A' }}>
+                            RM
+                        </Typography>
+                    </Box>
+                    <Typography variant="h4" fontWeight={700} color="text.primary">
+                        Welcome back
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Sign in to your account to continue
+                    </Typography>
+                </Box>
+
+                {/* Login Card */}
+                <Card
+                    sx={{
+                        borderRadius: 4,
+                        boxShadow: (theme) =>
+                            theme.palette.mode === 'dark'
+                                ? '0 24px 80px rgba(0, 0, 0, 0.5)'
+                                : '0 24px 80px rgba(15, 23, 42, 0.12)',
+                    }}
+                >
+                    <CardContent sx={{ p: 4 }}>
                 {error && (
-                    <div className="mb-4 p-3 bg-red-50 text-red-600 rounded">
+                            <Alert 
+                                severity="error" 
+                                sx={{ 
+                                    mb: 3,
+                                    borderRadius: 2,
+                                }}
+                            >
                         {error}
-                    </div>
+                            </Alert>
                 )}
+
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">Email</label>
-                        <input
+                            <TextField
+                                fullWidth
+                                label="Email Address"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg"
                             required
-                        />
-                    </div>
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium mb-2">{t('auth.password')}</label>
-                        <input
-                            type="password"
+                                autoComplete="email"
+                                autoFocus
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <EmailIcon sx={{ color: 'text.secondary' }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={{ mb: 2.5 }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                label={t('auth.password')}
+                                type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg"
                             required
-                        />
-                    </div>
-                    <button
+                                autoComplete="current-password"
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <LockIcon sx={{ color: 'text.secondary' }} />
+                                        </InputAdornment>
+                                    ),
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                edge="end"
+                                                size="small"
+                                            >
+                                                {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={{ mb: 3 }}
+                            />
+
+                            <Button
                         type="submit"
+                                fullWidth
+                                variant="contained"
+                                size="large"
                         disabled={isLoading}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                startIcon={
+                                    isLoading ? (
+                                        <CircularProgress size={20} color="inherit" />
+                                    ) : (
+                                        <LoginIcon />
+                                    )
+                                }
+                                sx={{
+                                    py: 1.5,
+                                    fontSize: '1rem',
+                                }}
                     >
                         {isLoading ? t('auth.loggingIn') : t('auth.login')}
-                    </button>
+                            </Button>
                 </form>
-                <div className="mt-4 text-center">
-                    <p className="text-sm text-gray-600">
+
+                        <Divider sx={{ my: 3 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                or
+                            </Typography>
+                        </Divider>
+
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">
                         {t('auth.dontHaveAccount')}{' '}
-                        <Link to="/register" className="text-blue-600 hover:text-blue-700">
+                                <Typography
+                                    component={Link}
+                                    to="/register"
+                                    variant="body2"
+                                    fontWeight={600}
+                                    sx={{
+                                        color: 'primary.main',
+                                        textDecoration: 'none',
+                                        '&:hover': {
+                                            textDecoration: 'underline',
+                                        },
+                                    }}
+                                >
                             {t('auth.register')}
-                        </Link>
-                    </p>
-                </div>
-            </div>
-        </div>
+                                </Typography>
+                            </Typography>
+                        </Box>
+                    </CardContent>
+                </Card>
+
+                {/* Footer */}
+                <Box sx={{ textAlign: 'center', mt: 4 }}>
+                    <Typography variant="caption" color="text.secondary">
+                        © 2024 Resource Management. All rights reserved.
+                    </Typography>
+                </Box>
+            </Box>
+        </Box>
     );
 }

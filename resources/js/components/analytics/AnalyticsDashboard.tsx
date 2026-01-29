@@ -1,6 +1,22 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '@/services/analytics';
+import {
+    Box,
+    Typography,
+    Card,
+    CardContent,
+    Grid,
+    LinearProgress,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+    Folder as ProjectIcon,
+    Assignment as TaskIcon,
+    People as UserIcon,
+    TrendingUp as AllocationIcon,
+} from '@mui/icons-material';
+import { PageHeader, StatCard, EmptyState } from '@/components/ui';
 
 export default function AnalyticsDashboard() {
     const { t } = useTranslation();
@@ -76,132 +92,256 @@ export default function AnalyticsDashboard() {
     };
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold">{t('analytics.title')}</h2>
+        <Box>
+            <PageHeader title={t('analytics.title')} />
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-sm font-medium text-gray-500">{t('analytics.totalProjects')}</h3>
-                    <p className="text-3xl font-bold mt-2">{dashboardStats?.projects || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-sm font-medium text-gray-500">{t('analytics.totalTasks')}</h3>
-                    <p className="text-3xl font-bold mt-2">{dashboardStats?.tasks || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-sm font-medium text-gray-500">{t('analytics.users')}</h3>
-                    <p className="text-3xl font-bold mt-2">{dashboardStats?.users || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-sm font-medium text-gray-500">{t('analytics.activeAllocations')}</h3>
-                    <p className="text-3xl font-bold mt-2">{dashboardStats?.active_allocations || 0}</p>
-                </div>
-            </div>
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('analytics.totalProjects')}
+                        value={dashboardStats?.projects || 0}
+                        icon={<ProjectIcon />}
+                        color="primary"
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('analytics.totalTasks')}
+                        value={dashboardStats?.tasks || 0}
+                        icon={<TaskIcon />}
+                        color="success"
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('analytics.users')}
+                        value={dashboardStats?.users || 0}
+                        icon={<UserIcon />}
+                        color="info"
+                    />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                    <StatCard
+                        title={t('analytics.activeAllocations')}
+                        value={dashboardStats?.active_allocations || 0}
+                        icon={<AllocationIcon />}
+                        color="warning"
+                    />
+                </Grid>
+            </Grid>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Grid container spacing={3} sx={{ mb: 4 }}>
                 {/* Project Status Breakdown */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-lg font-semibold mb-4">{t('analytics.projectsByStatus')}</h3>
-                    {statusChartData.length > 0 ? (
-                        <div className="space-y-2">
-                            {statusChartData.map((item, index) => (
-                                <div key={index} className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">{getProjectStatusLabel(item.status)}</span>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                                            <div
-                                                className="bg-blue-600 h-2 rounded-full"
-                                                style={{ width: `${(item.count / (projectStats?.total || 1)) * 100}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className="text-sm font-medium w-8">{item.count}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-gray-500 text-center py-8">{t('analytics.noDataAvailable')}</p>
-                    )}
-                </div>
+                <Grid size={{ xs: 12, lg: 6 }}>
+                    <Card elevation={0} sx={{ border: 1, borderColor: 'divider', height: '100%' }}>
+                        <CardContent>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>
+                                {t('analytics.projectsByStatus')}
+                            </Typography>
+                            {statusChartData.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                                    {statusChartData.map((item, index) => {
+                                        const percentage = (item.count / (projectStats?.total || 1)) * 100;
+                                        return (
+                                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                                    {getProjectStatusLabel(item.status)}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, maxWidth: 200 }}>
+                                                    <Box
+                                                        sx={{
+                                                            flex: 1,
+                                                            height: 8,
+                                                            borderRadius: 1,
+                                                            backgroundColor: (theme) =>
+                                                                alpha(theme.palette.primary.main, 0.2),
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
+                                                        <LinearProgress
+                                                            variant="determinate"
+                                                            value={percentage}
+                                                            sx={{
+                                                                height: '100%',
+                                                                backgroundColor: 'transparent',
+                                                                '& .MuiLinearProgress-bar': {
+                                                                    backgroundColor: 'primary.main',
+                                                                },
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                    <Typography variant="body2" fontWeight={600} sx={{ minWidth: 30, textAlign: 'right' }}>
+                                                        {item.count}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
+                            ) : (
+                                <EmptyState type="tasks" description={t('analytics.noDataAvailable')} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
 
                 {/* Task Priority Breakdown */}
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-lg font-semibold mb-4">{t('analytics.tasksByPriority')}</h3>
-                    {priorityChartData.length > 0 ? (
-                        <div className="space-y-2">
-                            {priorityChartData.map((item, index) => (
-                                <div key={index} className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-600">{getTaskPriorityLabel(item.priority)}</span>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                                            <div
-                                                className="bg-green-600 h-2 rounded-full"
-                                                style={{ width: `${(item.count / (taskStats?.total || 1)) * 100}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className="text-sm font-medium w-8">{item.count}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-gray-500 text-center py-8">{t('analytics.noDataAvailable')}</p>
-                    )}
-                </div>
+                <Grid size={{ xs: 12, lg: 6 }}>
+                    <Card elevation={0} sx={{ border: 1, borderColor: 'divider', height: '100%' }}>
+                        <CardContent>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>
+                                {t('analytics.tasksByPriority')}
+                            </Typography>
+                            {priorityChartData.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                                    {priorityChartData.map((item, index) => {
+                                        const percentage = (item.count / (taskStats?.total || 1)) * 100;
+                                        return (
+                                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                                    {getTaskPriorityLabel(item.priority)}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, maxWidth: 200 }}>
+                                                    <Box
+                                                        sx={{
+                                                            flex: 1,
+                                                            height: 8,
+                                                            borderRadius: 1,
+                                                            backgroundColor: (theme) =>
+                                                                alpha(theme.palette.success.main, 0.2),
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
+                                                        <LinearProgress
+                                                            variant="determinate"
+                                                            value={percentage}
+                                                            sx={{
+                                                                height: '100%',
+                                                                backgroundColor: 'transparent',
+                                                                '& .MuiLinearProgress-bar': {
+                                                                    backgroundColor: 'success.main',
+                                                                },
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                    <Typography variant="body2" fontWeight={600} sx={{ minWidth: 30, textAlign: 'right' }}>
+                                                        {item.count}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
+                            ) : (
+                                <EmptyState type="tasks" description={t('analytics.noDataAvailable')} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
 
                 {/* Task Completion Trend */}
-                <div className="bg-white p-6 rounded-lg shadow lg:col-span-2">
-                    <h3 className="text-lg font-semibold mb-4">{t('analytics.taskCompletionTrend')}</h3>
-                    {completionTrend && completionTrend.length > 0 ? (
-                        <div className="space-y-2">
-                            {completionTrend.map((item, index) => (
-                                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                    <span className="text-sm text-gray-600">{new Date(item.date).toLocaleDateString()}</span>
-                                    <span className="text-sm font-medium">{item.count} {t('analytics.tasks')}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-gray-500 text-center py-8">{t('analytics.noDataAvailable')}</p>
-                    )}
-                </div>
-            </div>
+                <Grid size={{ xs: 12 }}>
+                    <Card elevation={0} sx={{ border: 1, borderColor: 'divider' }}>
+                        <CardContent>
+                            <Typography variant="h6" fontWeight={600} gutterBottom>
+                                {t('analytics.taskCompletionTrend')}
+                            </Typography>
+                            {completionTrend && completionTrend.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+                                    {completionTrend.map((item, index) => (
+                                        <Box
+                                            key={index}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                p: 1.5,
+                                                borderRadius: 1,
+                                                backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.5),
+                                            }}
+                                        >
+                                            <Typography variant="body2" color="text.secondary">
+                                                {new Date(item.date).toLocaleDateString()}
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {item.count} {t('analytics.tasks')}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            ) : (
+                                <EmptyState type="tasks" description={t('analytics.noDataAvailable')} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
 
             {/* Resource Allocation Stats */}
             {resourceStats && (
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-lg font-semibold mb-4">{t('analytics.resourceAllocationOverview')}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <p className="text-sm text-gray-500">{t('analytics.totalActiveAllocations')}</p>
-                            <p className="text-2xl font-bold">{resourceStats.total_active_allocations}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500">{t('analytics.usersWithAllocations')}</p>
-                            <p className="text-2xl font-bold">{resourceStats.users_with_allocations}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500">{t('analytics.totalAllocationPercentage')}</p>
-                            <p className="text-2xl font-bold">{resourceStats.total_allocation_percentage.toFixed(1)}%</p>
-                        </div>
-                    </div>
-                    {resourceStats.by_project && resourceStats.by_project.length > 0 && (
-                        <div>
-                            <h4 className="font-medium mb-2">{t('analytics.byProject')}</h4>
-                            <div className="space-y-2">
-                                {resourceStats.by_project.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                        <span>{item.project_name}</span>
-                                        <span className="font-medium">{item.total_percentage.toFixed(1)}%</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                <Card elevation={0} sx={{ border: 1, borderColor: 'divider' }}>
+                    <CardContent>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                            {t('analytics.resourceAllocationOverview')}
+                        </Typography>
+                        <Grid container spacing={3} sx={{ mb: 3 }}>
+                            <Grid size={{ xs: 12, md: 4 }}>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                    {t('analytics.totalActiveAllocations')}
+                                </Typography>
+                                <Typography variant="h4" fontWeight={700}>
+                                    {resourceStats.total_active_allocations}
+                                </Typography>
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 4 }}>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                    {t('analytics.usersWithAllocations')}
+                                </Typography>
+                                <Typography variant="h4" fontWeight={700}>
+                                    {resourceStats.users_with_allocations}
+                                </Typography>
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 4 }}>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                    {t('analytics.totalAllocationPercentage')}
+                                </Typography>
+                                <Typography variant="h4" fontWeight={700}>
+                                    {resourceStats.total_allocation_percentage.toFixed(1)}%
+                                </Typography>
+                            </Grid>
+                        </Grid>
+                        {resourceStats.by_project && resourceStats.by_project.length > 0 && (
+                            <Box>
+                                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                    {t('analytics.byProject')}
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    {resourceStats.by_project.map((item, index) => (
+                                        <Box
+                                            key={index}
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                p: 1.5,
+                                                borderRadius: 1,
+                                                backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.5),
+                                            }}
+                                        >
+                                            <Typography variant="body2">{item.project_name}</Typography>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {item.total_percentage.toFixed(1)}%
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
+                        )}
+                    </CardContent>
+                </Card>
             )}
-        </div>
+        </Box>
     );
 }

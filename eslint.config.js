@@ -8,7 +8,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['dist', 'node_modules', 'public/build', 'storage', 'vendor'],
+    ignores: ['dist', 'node_modules', 'public/build', 'storage', 'vendor', 'cypress/**'],
   },
   {
     files: ['**/*.{js,jsx,ts,tsx}'],

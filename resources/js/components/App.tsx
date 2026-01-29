@@ -13,7 +13,6 @@ import KanbanBoard from './tasks/KanbanBoard';
 import ResourceAllocationList from './resourceAllocations/ResourceAllocationList';
 import ResourceAllocationForm from './resourceAllocations/ResourceAllocationForm';
 import UserList from './users/UserList';
-import AnalyticsDashboard from './analytics/AnalyticsDashboard';
 
 function App() {
     const { isAuthenticated, logout, setToken, setUser, setCurrentOrganization } = useAuthStore();
@@ -28,6 +27,7 @@ function App() {
         if (authStorage && authToken) {
             try {
                 const authState = JSON.parse(authStorage);
+                
                 if (authState.state?.isAuthenticated && authState.state?.token === authToken) {
                     // Restore state from storage
                     if (authState.state.user) {
@@ -41,14 +41,10 @@ function App() {
                     }
                 } else if (authState.state?.token !== authToken) {
                     // Token mismatch - clear state
-                    logout();
+                    // logout(); 
                 }
-            } catch {
-                // Invalid storage, clear it
-                localStorage.removeItem('auth-storage');
-                if (!authToken) {
-                    logout();
-                }
+            } catch (e) {
+                console.error('Error parsing auth storage', e);
             }
         } else if (!authToken && isAuthenticated) {
             // Inconsistent state - clear it
@@ -78,7 +74,6 @@ function App() {
                 <Route path="/resource-allocations/create" element={<ResourceAllocationForm />} />
                 <Route path="/resource-allocations/:id/edit" element={<ResourceAllocationForm />} />
                 <Route path="/users" element={<UserList />} />
-                <Route path="/analytics" element={<AnalyticsDashboard />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Layout>

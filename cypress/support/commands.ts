@@ -56,12 +56,15 @@ Cypress.Commands.add('login', (email = DEFAULT_EMAIL, password = DEFAULT_PASSWOR
                 }
                 
                 // Set Zustand persist state (auth-storage is the storage key)
-                // Zustand persist saves the partialized state directly
+                // Zustand persist saves state in { state: ..., version: 0 } format by default
                 const authState = {
-                    user: user,
-                    currentOrganization: organization || null,
-                    token: token,
-                    isAuthenticated: true,
+                    state: {
+                        user: user,
+                        currentOrganization: organization || null,
+                        token: token,
+                        isAuthenticated: true,
+                    },
+                    version: 0
                 };
                 win.localStorage.setItem('auth-storage', JSON.stringify(authState));
             });

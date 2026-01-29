@@ -348,18 +348,26 @@ The application includes comprehensive seeders for development and testing:
 
 ```bash
 # Seed everything (recommended)
-php artisan db:seed
-# or with Docker
+# Docker (recommended)
 docker-compose exec app php artisan db:seed
+# or Local
+php artisan db:seed
 
 # Seed specific seeder
+# Docker (recommended)
+docker-compose exec app php artisan db:seed --class=PermissionSeeder
+docker-compose exec app php artisan db:seed --class=UserSeeder
+# or Local
 php artisan db:seed --class=PermissionSeeder
 php artisan db:seed --class=UserSeeder
 
 # Fresh migration with seeding
-php artisan migrate:fresh --seed
-# or with Docker
+# Docker (recommended)
 make migrate-fresh
+# or
+docker-compose exec app php artisan migrate:fresh --seed
+# or Local
+php artisan migrate:fresh --seed
 ```
 
 ### Demo Credentials
@@ -389,25 +397,33 @@ Backend tests use **PHPUnit** and are located in `tests/` directory:
 ```bash
 # Run all tests (Docker - recommended)
 make test
-
-# Run all tests (Local)
+# or
+docker-compose exec app php artisan test
+# or Local
 php artisan test
 
 # Run specific test file
-php artisan test tests/Unit/AuthServiceTest.php
-# or with Docker
-docker-compose exec -e DB_CONNECTION=pgsql -e DB_HOST=postgres -e DB_PORT=5432 -e DB_DATABASE=resource_management_test -e DB_USERNAME=postgres -e DB_PASSWORD=postgres app php artisan test tests/Unit/AuthServiceTest.php
-
-# Run specific test file
+# Docker (recommended)
+docker-compose exec app php artisan test tests/Unit/AuthServiceTest.php
+# or Local
 php artisan test tests/Unit/AuthServiceTest.php
 
 # Run tests with coverage
+# Docker (recommended)
+docker-compose exec app php artisan test --coverage
+# or Local
 php artisan test --coverage
 
 # Run tests in parallel (faster)
+# Docker (recommended)
+docker-compose exec app php artisan test --parallel
+# or Local
 php artisan test --parallel
 
 # Run specific test method
+# Docker (recommended)
+docker-compose exec app php artisan test --filter it_can_register_a_new_user
+# or Local
 php artisan test --filter it_can_register_a_new_user
 ```
 
@@ -447,36 +463,8 @@ Frontend tests use **Vitest** and **React Testing Library**:
 
 ```bash
 # Run all tests
-npm test
-
-# Run tests in watch mode
-npm test -- --watch
-
-# Run tests with UI
-npm run test:ui
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run specific test file
-npm test tests/unit/services/projectService.test.ts
-```
-
-#### Writing Frontend Tests
-
-Example component test:
-
-```typescript
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import Component from '@/components/Component';
-
-describe('Component', () => {
-    it('should render correctly', () => {
-        render(<Component />);
-        expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-});
+# Docker (recommended)
+docker-compose exec node npm test
 ```
 
 ### End-to-End (E2E) Tests
@@ -609,11 +597,16 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 **Migration errors:**
 ```bash
 # Reset database
-php artisan migrate:fresh
-# or with Docker
+# Docker (recommended)
 docker-compose exec app php artisan migrate:fresh
+# or Local
+php artisan migrate:fresh
 
 # Clear cache
+# Docker (recommended)
+docker-compose exec app php artisan config:clear
+docker-compose exec app php artisan cache:clear
+# or Local
 php artisan config:clear
 php artisan cache:clear
 ```
@@ -628,19 +621,31 @@ php artisan cache:clear
 **Vite dev server not working:**
 ```bash
 # Clear node_modules and reinstall
+# Docker (recommended)
+docker-compose exec node sh -c "rm -rf node_modules package-lock.json && npm install"
+# or Local
 rm -rf node_modules package-lock.json
 npm install
 
 # Clear Vite cache
+# Docker (recommended)
+docker-compose exec node sh -c "rm -rf node_modules/.vite"
+# or Local
 rm -rf node_modules/.vite
 ```
 
 **Build errors:**
 ```bash
 # Check TypeScript errors
+# Docker (recommended)
+docker-compose exec node npm run type-check
+# or Local
 npm run type-check
 
 # Clear build cache
+# Docker (recommended)
+docker-compose exec node sh -c "rm -rf public/build && npm run build"
+# or Local
 rm -rf public/build
 npm run build
 ```
@@ -648,7 +653,9 @@ npm run build
 **CORS errors:**
 - Ensure `VITE_API_URL` in `.env` matches your backend URL
 - Check `config/cors.php` configuration
-- Clear Laravel config cache: `php artisan config:clear`
+- Clear Laravel config cache:
+  - Docker (recommended): `docker-compose exec app php artisan config:clear`
+  - Local: `php artisan config:clear`
 
 #### Testing Issues
 
@@ -656,10 +663,10 @@ npm run build
 ```bash
 # For Docker: Ensure test database exists and run migrations
 docker-compose exec postgres psql -U postgres -c "CREATE DATABASE resource_management_test;" 2>/dev/null || true
-docker-compose exec -e DB_CONNECTION=pgsql -e DB_HOST=postgres -e DB_DATABASE=resource_management_test -e DB_USERNAME=postgres -e DB_PASSWORD=postgres app php artisan migrate --env=testing
+docker-compose exec app php artisan migrate --env=testing
 
 # Clear test database and re-run migrations
-docker-compose exec -e DB_CONNECTION=pgsql -e DB_HOST=postgres -e DB_DATABASE=resource_management_test -e DB_USERNAME=postgres -e DB_PASSWORD=postgres app php artisan migrate:fresh --env=testing
+docker-compose exec app php artisan migrate:fresh --env=testing
 
 # Clear caches
 docker-compose exec app php artisan config:clear
@@ -678,19 +685,33 @@ make test
 **Frontend tests failing:**
 ```bash
 # Clear node_modules
+# Docker (recommended)
+docker-compose exec node sh -c "rm -rf node_modules && npm install"
+# or Local
 rm -rf node_modules
 npm install
 
 # Run tests with debug
+# Docker (recommended)
+docker-compose exec node npm test -- --reporter=verbose
+# or Local
 npm test -- --reporter=verbose
 ```
 
 ### Getting Help
 
-1. Check the logs: `docker-compose logs -f` or `storage/logs/laravel.log`
-2. Verify environment configuration: `php artisan config:show`
-3. Check routes: `php artisan route:list`
-4. Verify database connection: `php artisan tinker` then `DB::connection()->getPdo()`
+1. Check the logs:
+   - Docker (recommended): `docker-compose logs -f` or `make logs`
+   - Local: `storage/logs/laravel.log`
+2. Verify environment configuration:
+   - Docker (recommended): `docker-compose exec app php artisan config:show`
+   - Local: `php artisan config:show`
+3. Check routes:
+   - Docker (recommended): `docker-compose exec app php artisan route:list`
+   - Local: `php artisan route:list`
+4. Verify database connection:
+   - Docker (recommended): `docker-compose exec app php artisan tinker` then `DB::connection()->getPdo()`
+   - Local: `php artisan tinker` then `DB::connection()->getPdo()`
 
 ## 📁 Project Structure
 

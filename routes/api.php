@@ -40,6 +40,7 @@ Route::prefix('v1')->group(function () {
             ];
 
             foreach ($patterns as $pattern) {
+
                 // Clear cache keys matching the pattern
                 // Note: This is a simplified approach - in production you'd use Redis SCAN or similar
                 Cache::flush(); // For testing, we can flush all cache
