@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Box, Typography, Button } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import {
   Inbox as InboxIcon,
   Search as SearchIcon,
@@ -93,7 +93,7 @@ export default function EmptyState({
           width: 120,
           height: 120,
           borderRadius: '50%',
-          backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+          backgroundColor: (theme: Theme) => alpha(theme.palette.primary.main, 0.1),
           color: 'primary.main',
           mb: 3,
           animation: 'float 3s ease-in-out infinite',

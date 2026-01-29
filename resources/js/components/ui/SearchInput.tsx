@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent, type ChangeEvent } from 'react';
 import {
   TextField,
   InputAdornment,
@@ -13,7 +13,16 @@ import {
   ClickAwayListener,
   Fade,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
+
+interface PopperChildrenProps {
+  placement: string;
+  TransitionProps?: {
+    in: boolean;
+    onEnter: () => void;
+    onExited: () => void;
+  };
+}
 import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
 
 interface SearchSuggestion {
@@ -116,7 +125,7 @@ export default function SearchInput({
       <Box ref={anchorRef} sx={{ position: 'relative', width: fullWidth ? '100%' : 'auto' }}>
         <TextField
           value={value}
-          onChange={(e) => {
+          onChange={(e: ChangeEvent<HTMLInputElement>) => {
             onChange(e.target.value);
             setOpen(true);
           }}
@@ -141,7 +150,7 @@ export default function SearchInput({
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
-              backgroundColor: (theme) => 
+              backgroundColor: (theme: Theme) => 
                 theme.palette.mode === 'dark' 
                   ? alpha(theme.palette.background.paper, 0.8)
                   : theme.palette.background.paper,
@@ -156,7 +165,7 @@ export default function SearchInput({
           transition
           style={{ width: anchorRef.current?.clientWidth, zIndex: 1300 }}
         >
-          {({ TransitionProps }) => (
+          {({ TransitionProps }: PopperChildrenProps) => (
             <Fade {...TransitionProps} timeout={200}>
               <Paper
                 elevation={8}
@@ -186,7 +195,7 @@ export default function SearchInput({
                           py: 1.5,
                           px: 2,
                           '&.Mui-selected': {
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                            backgroundColor: (theme: Theme) => alpha(theme.palette.primary.main, 0.12),
                             borderLeft: 2,
                             borderColor: 'primary.main',
                           },

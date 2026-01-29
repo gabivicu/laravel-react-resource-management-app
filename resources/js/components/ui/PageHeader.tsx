@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Box, Typography, Button, Breadcrumbs, Link as MuiLink, Skeleton } from '@mui/material';
+import { type Theme } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import { 
   Add as AddIcon,
@@ -99,7 +100,7 @@ export default function PageHeader({
                 component="h1"
                 sx={{ 
                   fontWeight: 700,
-                  background: (theme) => 
+                  background: (theme: Theme) => 
                     theme.palette.mode === 'dark' 
                       ? 'linear-gradient(135deg, #F8FAFC 0%, #94A3B8 100%)'
                       : 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',

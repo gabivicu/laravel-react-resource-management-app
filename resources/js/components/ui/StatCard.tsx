@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Box, Card, CardContent, Typography, Skeleton } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import { TrendingUp as TrendUpIcon, TrendingDown as TrendDownIcon } from '@mui/icons-material';
 
@@ -61,7 +61,7 @@ export default function StatCard({
           transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
           '&:hover': link ? {
             transform: 'translateY(-4px)',
-            boxShadow: (theme) => theme.shadows[8],
+            boxShadow: (theme: Theme) => theme.shadows[8],
             borderColor: alpha(accentColor, 0.5),
           } : {},
         }}

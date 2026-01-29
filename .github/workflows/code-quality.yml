@@ -73,13 +73,84 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Clear npm cache (if needed)
+        run: |
+          echo "Clearing npm cache to ensure clean install..."
+          npm cache clean --force || true
+
       - name: Install npm dependencies
         run: |
+          echo "Installing npm dependencies..."
           if [ -f package-lock.json ]; then
-            npm ci
+            npm ci --prefer-offline --no-audit --legacy-peer-deps
           else
-            npm install
+            npm install --prefer-offline --no-audit --legacy-peer-deps
           fi
+          
+      - name: List installed MUI packages
+        run: |
+          echo "Checking installed MUI packages..."
+          ls -la node_modules/@mui/ 2>/dev/null || echo "No @mui directory found"
+          ls -la node_modules/@mui/material 2>/dev/null || echo "@mui/material not found"
+          ls -la node_modules/@mui/icons-material 2>/dev/null || echo "@mui/icons-material not found"
+          ls -la node_modules/@mui/x-date-pickers 2>/dev/null || echo "@mui/x-date-pickers not found"
+
+      - name: Verify MUI dependencies are installed
+        id: verify-mui
+        run: |
+          if [ ! -d "node_modules/@mui/material" ] || [ ! -d "node_modules/@mui/icons-material" ] || [ ! -d "node_modules/@mui/x-date-pickers" ]; then
+            echo "⚠ MUI dependencies missing, attempting to reinstall..."
+            echo "missing=true" >> $GITHUB_OUTPUT
+          else
+            echo "✓ All MUI dependencies are installed"
+            echo "missing=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Reinstall dependencies if MUI is missing
+        if: steps.verify-mui.outputs.missing == 'true'
+        run: |
+          echo "Clearing npm cache and reinstalling dependencies..."
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+          
+          # Verify again after reinstall
+          if [ ! -d "node_modules/@mui/material" ]; then
+            echo "Error: @mui/material still not found after reinstall"
+            exit 1
+          fi
+          if [ ! -d "node_modules/@mui/icons-material" ]; then
+            echo "Error: @mui/icons-material still not found after reinstall"
+            exit 1
+          fi
+          if [ ! -d "node_modules/@mui/x-date-pickers" ]; then
+            echo "Error: @mui/x-date-pickers still not found after reinstall"
+            exit 1
+          fi
+          echo "✓ All MUI dependencies are now installed"
+
+      - name: Verify TypeScript can resolve MUI modules
+        run: |
+          echo "Verifying TypeScript can resolve MUI modules..."
+          node -e "
+            try {
+              require.resolve('@mui/material');
+              require.resolve('@mui/icons-material');
+              require.resolve('@mui/x-date-pickers');
+              console.log('✓ All MUI modules can be resolved by Node.js');
+            } catch (e) {
+              console.error('✗ Error resolving MUI modules:', e.message);
+              process.exit(1);
+            }
+          "
+
+      - name: Check TypeScript configuration
+        run: |
+          echo "Checking TypeScript configuration..."
+          cat tsconfig.json
+          echo ""
+          echo "Checking if TypeScript can find type definitions..."
+          npx tsc --showConfig 2>&1 | head -20 || true
 
       - name: Run TypeScript type check
         run: npm run type-check
@@ -104,13 +175,61 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Clear npm cache (if needed)
+        run: |
+          echo "Clearing npm cache to ensure clean install..."
+          npm cache clean --force || true
+
       - name: Install npm dependencies
         run: |
+          echo "Installing npm dependencies..."
           if [ -f package-lock.json ]; then
-            npm ci
+            npm ci --prefer-offline --no-audit --legacy-peer-deps
           else
-            npm install
+            npm install --prefer-offline --no-audit --legacy-peer-deps
           fi
+          
+      - name: List installed MUI packages
+        run: |
+          echo "Checking installed MUI packages..."
+          ls -la node_modules/@mui/ 2>/dev/null || echo "No @mui directory found"
+          ls -la node_modules/@mui/material 2>/dev/null || echo "@mui/material not found"
+          ls -la node_modules/@mui/icons-material 2>/dev/null || echo "@mui/icons-material not found"
+          ls -la node_modules/@mui/x-date-pickers 2>/dev/null || echo "@mui/x-date-pickers not found"
+
+      - name: Verify MUI dependencies are installed
+        id: verify-mui-build
+        run: |
+          if [ ! -d "node_modules/@mui/material" ] || [ ! -d "node_modules/@mui/icons-material" ] || [ ! -d "node_modules/@mui/x-date-pickers" ]; then
+            echo "⚠ MUI dependencies missing, attempting to reinstall..."
+            echo "missing=true" >> $GITHUB_OUTPUT
+          else
+            echo "✓ All MUI dependencies are installed"
+            echo "missing=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Reinstall dependencies if MUI is missing
+        if: steps.verify-mui-build.outputs.missing == 'true'
+        run: |
+          echo "Clearing npm cache and reinstalling dependencies..."
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+          
+          # Verify again after reinstall
+          if [ ! -d "node_modules/@mui/material" ]; then
+            echo "Error: @mui/material still not found after reinstall"
+            exit 1
+          fi
+          if [ ! -d "node_modules/@mui/icons-material" ]; then
+            echo "Error: @mui/icons-material still not found after reinstall"
+            exit 1
+          fi
+          if [ ! -d "node_modules/@mui/x-date-pickers" ]; then
+            echo "Error: @mui/x-date-pickers still not found after reinstall"
+            exit 1
+          fi
+          echo "✓ All MUI dependencies are now installed"
 
       - name: Build frontend
         run: npm run build

@@ -1,5 +1,5 @@
 import { Box, CircularProgress, Typography, Skeleton, type BoxProps } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 
 interface LoadingSpinnerProps extends BoxProps {
   size?: 'small' | 'medium' | 'large';
@@ -37,11 +37,11 @@ export default function LoadingSpinner({
         ...(overlay && {
           position: 'absolute',
           inset: 0,
-          backgroundColor: (theme) => alpha(theme.palette.background.default, 0.8),
+          backgroundColor: (theme: Theme) => alpha(theme.palette.background.default, 0.8),
           backdropFilter: 'blur(4px)',
           zIndex: 10,
         }),
-        ...boxProps.sx,
+        ...(boxProps.sx || {}),
       }}
       {...boxProps}
     >
@@ -53,7 +53,7 @@ export default function LoadingSpinner({
           size={sizeMap[size]}
           thickness={3}
           sx={{
-            color: (theme) => alpha(theme.palette.primary.main, 0.15),
+            color: (theme: Theme) => alpha(theme.palette.primary.main, 0.15),
             position: 'absolute',
           }}
         />
