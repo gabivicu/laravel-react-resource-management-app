@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             ProjectSeeder::class,
             TaskSeeder::class,
             ResourceAllocationSeeder::class,
+            LargeScaleSeeder::class,
         ]);
 
         $this->command->info('Database seeding completed successfully!');
