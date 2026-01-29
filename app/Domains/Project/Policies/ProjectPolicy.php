@@ -62,9 +62,10 @@ class ProjectPolicy
             return false;
         }
 
-        // Check if user has update permission OR is the creator
+        // Check if user has update permission OR is a project member (any role)
+        // This allows any member of the project to update it, not just owners/managers
         return $this->hasPermission($user, 'projects.update')
-            || $project->members()->where('user_id', $user->id)->wherePivot('role', 'owner')->exists();
+            || $project->members()->where('user_id', $user->id)->exists();
     }
 
     /**

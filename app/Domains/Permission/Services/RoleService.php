@@ -12,10 +12,14 @@ class RoleService
 {
     /**
      * Get all roles for organization
+     * Returns both organization-specific roles and global roles (where organization_id is null)
      */
     public function getByOrganization(int $organizationId): Collection
     {
-        return Role::where('organization_id', $organizationId)
+        return Role::where(function ($query) use ($organizationId) {
+            $query->where('organization_id', $organizationId)
+                ->orWhereNull('organization_id'); // Include global roles
+        })
             ->with('permissions')
             ->orderBy('name')
             ->get();

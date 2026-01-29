@@ -1,9 +1,27 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '@/services/projects';
 import useDebounce from '@/hooks/useDebounce';
 import type { Project } from '@/types';
+import {
+  Paper,
+  List,
+  ListItemButton,
+  ListItemText,
+  Box,
+  Typography,
+  Popper,
+  ClickAwayListener,
+  Fade,
+  CircularProgress,
+  TextField,
+  InputAdornment,
+  IconButton,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { Search as SearchIcon, Close as CloseIcon } from '@mui/icons-material';
+import StatusChip from '@/components/ui/StatusChip';
 
 interface ProjectSelectorProps {
     value?: string | number;
@@ -12,6 +30,7 @@ interface ProjectSelectorProps {
     error?: string;
     disabled?: boolean;
     initialProject?: Project; // Pass initial project object to avoid extra fetch
+    containerSx?: object; // Allow overriding container styles
 }
 
 export default function ProjectSelector({ 
@@ -20,16 +39,16 @@ export default function ProjectSelector({
     label = "Project", 
     error, 
     disabled = false,
-    initialProject 
+    initialProject,
+    containerSx
 }: ProjectSelectorProps) {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProject, setSelectedProject] = useState<Project | null>(initialProject || null);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [keyboardIndex, setKeyboardIndex] = useState(-1);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const suggestionsListRef = useRef<HTMLUListElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const [open, setOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const anchorRef = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
 
     const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -60,33 +79,22 @@ export default function ProjectSelector({
     const { data: suggestionsData, isLoading } = useQuery({
         queryKey: ['projects-suggestions', debouncedSearch],
         queryFn: () => projectService.getProjects({ search: debouncedSearch }, 1, 5),
-        enabled: debouncedSearch.length > 1 && !selectedProject && showSuggestions,
+        enabled: debouncedSearch.length > 1 && !selectedProject && open,
     });
 
     const suggestions = useMemo(() => suggestionsData?.data || [], [suggestionsData?.data]);
-
-    // Handle click outside to close suggestions
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setShowSuggestions(false);
-                setKeyboardIndex(-1);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const showSuggestions = open && suggestions.length > 0 && !selectedProject;
 
     // Reset keyboard index when suggestions change
     useEffect(() => {
-        setKeyboardIndex(-1);
+        setHighlightedIndex(-1);
     }, [suggestions]);
 
     // Handle keyboard navigation
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (!showSuggestions || suggestions.length === 0) {
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (!showSuggestions) {
             if (e.key === 'ArrowDown' && debouncedSearch.length > 1) {
-                setShowSuggestions(true);
+                setOpen(true);
             }
             return;
         }
@@ -94,51 +102,47 @@ export default function ProjectSelector({
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
-                setKeyboardIndex((prev) => {
-                    const nextIndex = prev < suggestions.length - 1 ? prev + 1 : prev;
-                    scrollToIndex(nextIndex);
-                    return nextIndex;
+                setHighlightedIndex((prev) => {
+                    const next = prev < suggestions.length - 1 ? prev + 1 : prev;
+                    scrollToIndex(next);
+                    return next;
                 });
                 break;
             case 'ArrowUp':
                 e.preventDefault();
-                setKeyboardIndex((prev) => {
-                    const nextIndex = prev > 0 ? prev - 1 : -1;
-                    scrollToIndex(nextIndex);
-                    return nextIndex;
+                setHighlightedIndex((prev) => {
+                    const next = prev > 0 ? prev - 1 : -1;
+                    scrollToIndex(next);
+                    return next;
                 });
                 break;
             case 'Enter':
                 e.preventDefault();
-                if (keyboardIndex >= 0 && keyboardIndex < suggestions.length) {
-                    handleSelect(suggestions[keyboardIndex]);
+                if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+                    handleSelect(suggestions[highlightedIndex]);
                 }
                 break;
             case 'Escape':
                 e.preventDefault();
-                setShowSuggestions(false);
-                setKeyboardIndex(-1);
-                inputRef.current?.blur();
+                setOpen(false);
+                setHighlightedIndex(-1);
                 break;
         }
     };
 
     // Scroll to highlighted item
     const scrollToIndex = (index: number) => {
-        if (suggestionsListRef.current && index >= 0) {
-            const items = suggestionsListRef.current.querySelectorAll('li');
-            const item = items[index];
-            if (item) {
-                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
+        if (listRef.current && index >= 0) {
+            const items = listRef.current.querySelectorAll('[role="option"]');
+            items[index]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
     };
 
     const handleSelect = (project: Project) => {
         setSelectedProject(project);
         setSearchQuery(project.name);
-        setShowSuggestions(false);
-        setKeyboardIndex(-1);
+        setOpen(false);
+        setHighlightedIndex(-1);
         onChange(project.id.toString());
     };
 
@@ -146,24 +150,7 @@ export default function ProjectSelector({
         setSelectedProject(null);
         setSearchQuery('');
         onChange('');
-        setShowSuggestions(true); // Re-open suggestions to allow new search
-    };
-
-    const getStatusLabel = (status: string): string => {
-        switch (status) {
-            case 'planning':
-                return t('projects.statusPlanning');
-            case 'active':
-                return t('projects.statusActive');
-            case 'on_hold':
-                return t('projects.statusOnHold');
-            case 'completed':
-                return t('projects.statusCompleted');
-            case 'cancelled':
-                return t('projects.statusCancelled');
-            default:
-                return status;
-        }
+        setOpen(true); // Re-open suggestions to allow new search
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,77 +159,151 @@ export default function ProjectSelector({
             setSelectedProject(null); // Clear selection if user modifies text
             onChange('');
         }
-        setShowSuggestions(true);
-        setKeyboardIndex(-1);
+        setOpen(true);
+        setHighlightedIndex(-1);
     };
 
     return (
-        <div className="mb-4 relative" ref={containerRef}>
-            <label className="block text-sm font-medium mb-2">{label}</label>
-            <div className="relative">
-                <input
-                    ref={inputRef}
-                    type="text"
+        <ClickAwayListener onClickAway={() => setOpen(false)}>
+            <Box sx={{ mb: 3, ...containerSx }} ref={anchorRef}>
+                <TextField
+                    inputProps={{ "data-testid": "project-selector-input" }}
+                    fullWidth
+                    label={label}
                     value={searchQuery}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    onFocus={() => setShowSuggestions(true)}
+                    onFocus={() => setOpen(true)}
                     disabled={disabled}
                     placeholder={t('projects.searchProjects')}
-                    className={`w-full px-3 py-2 border rounded-lg pr-8 ${
-                        error ? 'border-red-500' : 'border-gray-300'
-                    } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    error={!!error}
+                    helperText={error}
+                    InputLabelProps={{
+                        sx: {
+                            color: 'text.primary',
+                            top: '-2px', // Adjust label position for more space
+                            '&.Mui-focused': {
+                                color: 'text.primary',
+                            },
+                            '&.MuiInputLabel-shrink': {
+                                color: 'text.primary',
+                            },
+                        },
+                    }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon sx={{ color: 'text.secondary' }} />
+                            </InputAdornment>
+                        ),
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                {isLoading && !selectedProject && debouncedSearch.length > 1 ? (
+                                    <CircularProgress size={20} />
+                                ) : selectedProject && !disabled ? (
+                                    <IconButton
+                                        size="small"
+                                        onClick={handleClear}
+                                        edge="end"
+                                        sx={{ color: 'text.secondary' }}
+                                    >
+                                        <CloseIcon sx={{ fontSize: 20 }} />
+                                    </IconButton>
+                                ) : null}
+                            </InputAdornment>
+                        ),
+                    }}
                 />
-                
-                {selectedProject && !disabled && (
-                    <button
-                        type="button"
-                        onClick={handleClear}
-                        className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
-                    >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                )}
 
-                {isLoading && !selectedProject && debouncedSearch.length > 1 && (
-                    <div className="absolute right-2 top-2.5 text-gray-400">
-                        <div className="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>
-                    </div>
-                )}
-            </div>
-
-            {showSuggestions && suggestions.length > 0 && !selectedProject && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    <ul ref={suggestionsListRef}>
-                        {suggestions.map((project, index) => (
-                            <li
-                                key={project.id}
-                                onClick={() => handleSelect(project)}
-                                className={`px-4 py-2 cursor-pointer text-sm text-gray-700 flex justify-between items-center ${
-                                    index === keyboardIndex 
-                                        ? 'bg-blue-50 border-l-2 border-blue-500' 
-                                        : 'hover:bg-gray-50'
-                                }`}
+                <Popper
+                    open={showSuggestions}
+                    anchorEl={anchorRef.current}
+                    placement="bottom-start"
+                    transition
+                    style={{ width: anchorRef.current?.clientWidth, zIndex: 1300 }}
+                >
+                    {({ TransitionProps }) => (
+                        <Fade {...TransitionProps} timeout={200}>
+                            <Paper
+                                elevation={8}
+                                sx={{
+                                    mt: 0.5,
+                                    maxHeight: 300,
+                                    overflow: 'auto',
+                                    border: 1,
+                                    borderColor: 'divider',
+                                }}
                             >
-                                <span>{project.name}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600`}>
-                                    {getStatusLabel(project.status)}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-            
-            {showSuggestions && debouncedSearch.length > 1 && suggestions.length === 0 && !isLoading && !selectedProject && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-sm text-gray-500">
-                    {t('projects.noProjectsFound')}
-                </div>
-            )}
+                                {isLoading ? (
+                                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                                        <CircularProgress size={24} />
+                                    </Box>
+                                ) : (
+                                    <List ref={listRef} dense disablePadding>
+                                        {suggestions.map((project, index) => (
+                                            <ListItemButton
+                                                key={project.id}
+                                                role="option"
+                                                selected={index === highlightedIndex}
+                                                onClick={() => handleSelect(project)}
+                                                sx={{
+                                                    py: 1.5,
+                                                    px: 2,
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    '&.Mui-selected': {
+                                                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                                        borderLeft: 2,
+                                                        borderColor: 'primary.main',
+                                                    },
+                                                }}
+                                            >
+                                                <ListItemText
+                                                    primary={project.name}
+                                                    primaryTypographyProps={{
+                                                        fontWeight: index === highlightedIndex ? 600 : 400,
+                                                    }}
+                                                />
+                                                <StatusChip status={project.status} size="small" />
+                                            </ListItemButton>
+                                        ))}
+                                    </List>
+                                )}
+                            </Paper>
+                        </Fade>
+                    )}
+                </Popper>
 
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-        </div>
+                {open && debouncedSearch.length > 1 && suggestions.length === 0 && !isLoading && !selectedProject && (
+                    <Popper
+                        open={true}
+                        anchorEl={anchorRef.current}
+                        placement="bottom-start"
+                        transition
+                        style={{ width: anchorRef.current?.clientWidth, zIndex: 1300 }}
+                    >
+                        {({ TransitionProps }) => (
+                            <Fade {...TransitionProps} timeout={200}>
+                                <Paper
+                                    elevation={8}
+                                    sx={{
+                                        mt: 0.5,
+                                        border: 1,
+                                        borderColor: 'divider',
+                                    }}
+                                >
+                                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {t('projects.noProjectsFound')}
+                                        </Typography>
+                                    </Box>
+                                </Paper>
+                            </Fade>
+                        )}
+                    </Popper>
+                )}
+            </Box>
+        </ClickAwayListener>
     );
 }

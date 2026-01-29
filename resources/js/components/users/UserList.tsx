@@ -4,6 +4,24 @@ import { userService, UserListResponse } from '@/services/users';
 import { roleService } from '@/services/roles';
 import { useState, useEffect } from 'react';
 import useIntersectionObserver from '@/hooks/useIntersectionObserver';
+import {
+    Box,
+    Typography,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    TextField,
+    Select,
+    MenuItem,
+    FormControl,
+    CircularProgress,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { PageHeader, EmptyState } from '@/components/ui';
 
 export default function UserList() {
     const { t } = useTranslation();
@@ -50,6 +68,38 @@ export default function UserList() {
     const assignRoleMutation = useMutation({
         mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) =>
             userService.assignRole(userId, roleId),
+        onMutate: async ({ userId, roleId }) => {
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ['users'] });
+
+            // Snapshot previous value
+            const previousUsers = queryClient.getQueriesData({ queryKey: ['users'] });
+
+            // Optimistically update
+            queryClient.setQueriesData({ queryKey: ['users'] }, (old: any) => {
+                if (!old) return old;
+                
+                return {
+                    ...old,
+                    pages: old.pages.map((page: any) => ({
+                        ...page,
+                        data: page.data.map((user: any) =>
+                            user.id === userId ? { ...user, role_id: roleId } : user
+                        ),
+                    })),
+                };
+            });
+
+            return { previousUsers };
+        },
+        onError: (_err, _variables, context) => {
+            // Rollback on error
+            if (context?.previousUsers) {
+                context.previousUsers.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
@@ -57,106 +107,170 @@ export default function UserList() {
 
     const removeRoleMutation = useMutation({
         mutationFn: (userId: number) => userService.removeRole(userId),
+        onMutate: async (userId) => {
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ['users'] });
+
+            // Snapshot previous value
+            const previousUsers = queryClient.getQueriesData({ queryKey: ['users'] });
+
+            // Optimistically update
+            queryClient.setQueriesData({ queryKey: ['users'] }, (old: any) => {
+                if (!old) return old;
+                
+                return {
+                    ...old,
+                    pages: old.pages.map((page: any) => ({
+                        ...page,
+                        data: page.data.map((user: any) =>
+                            user.id === userId ? { ...user, role_id: null } : user
+                        ),
+                    })),
+                };
+            });
+
+            return { previousUsers };
+        },
+        onError: (_err, _variables, context) => {
+            // Rollback on error
+            if (context?.previousUsers) {
+                context.previousUsers.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },
     });
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500">{t('users.loadingUsers')}</div>
-            </div>
-        );
-    }
-
     const users = data?.pages.flatMap((page) => page.data) || [];
     const roles = rolesData || [];
 
+    // Helper function to get valid role_id for Select component
+    const getValidRoleId = (userRoleId: number | null | undefined): string | number => {
+        if (!userRoleId) return '';
+        // Check if role_id exists in available roles
+        const roleExists = roles.some(role => role.id === userRoleId);
+        return roleExists ? userRoleId : '';
+    };
+
     return (
-        <div className="w-full">
-            <h2 className="text-2xl font-bold mb-6">{t('users.title')}</h2>
+        <Box>
+            <PageHeader title={t('users.title')} />
 
             {/* Search */}
-            <div className="mb-4">
-                <input
-                    type="text"
+            <Box sx={{ mb: 3, maxWidth: 400 }}>
+                <TextField
+                    fullWidth
+                    size="small"
                     placeholder={t('users.searchUsers')}
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="px-3 py-2 border rounded-lg w-full max-w-md"
                 />
-            </div>
+            </Box>
 
             {/* Users Table */}
-            {users.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                    <p>{t('users.noUsersFound')}</p>
-                </div>
+            {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                    <CircularProgress />
+                </Box>
+            ) : users.length === 0 ? (
+                <EmptyState type="users" title={t('users.noUsersFound')} />
             ) : (
                 <>
-                    <div className="bg-white rounded-lg shadow overflow-hidden">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('users.name')}</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('users.email')}</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('users.role')}</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('common.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
+                    <TableContainer component={Paper} sx={{ mb: 2 }}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>{t('users.name')}</TableCell>
+                                    <TableCell>{t('users.email')}</TableCell>
+                                    <TableCell>{t('users.role')}</TableCell>
+                                    <TableCell>{t('common.actions')}</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
                                 {users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
-                                        <td className="px-6 py-4">
-                                            <select
-                                                className="px-2 py-1 border rounded text-sm"
-                                                onChange={(e) => {
-                                                    const roleId = parseInt(e.target.value);
-                                                    if (roleId) {
-                                                        assignRoleMutation.mutate({ userId: user.id, roleId });
-                                                    } else {
-                                                        removeRoleMutation.mutate(user.id);
-                                                    }
+                                    <TableRow
+                                        key={user.id}
+                                        sx={{
+                                            '&:hover': {
+                                                backgroundColor: (theme) =>
+                                                    alpha(theme.palette.primary.main, 0.04),
+                                            },
+                                        }}
+                                    >
+                                        <TableCell>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {user.name}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {user.email}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <FormControl size="small" sx={{ minWidth: 150 }}>
+                                                <Select
+                                                    value={getValidRoleId(user.role_id)}
+                                                    onChange={(e) => {
+                                                        const roleId = parseInt(e.target.value as string);
+                                                        if (roleId) {
+                                                            assignRoleMutation.mutate({ userId: user.id, roleId });
+                                                        } else {
+                                                            removeRoleMutation.mutate(user.id);
+                                                        }
+                                                    }}
+                                                    disabled={roles.length === 0}
+                                                >
+                                                    <MenuItem value="">{t('users.noRole')}</MenuItem>
+                                                    {roles.map((role) => (
+                                                        <MenuItem key={role.id} value={role.id}>
+                                                            {role.name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: 'primary.main',
+                                                    cursor: 'pointer',
+                                                    '&:hover': {
+                                                        textDecoration: 'underline',
+                                                    },
                                                 }}
-                                                // Assuming we can get user's role somehow, but User object here might not have role_id directly 
-                                                // depending on API Resource. 
-                                                // The original code didn't set value={...} so it's uncontrolled or defaults to "No Role" visually.
-                                                defaultValue="" 
                                             >
-                                                <option value="">{t('users.noRole')}</option>
-                                                {roles.map((role) => (
-                                                    <option key={role.id} value={role.id}>
-                                                        {role.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm">
-                                            <button className="text-blue-600 hover:text-blue-800">
                                                 {t('users.edit')}
-                                            </button>
-                                        </td>
-                                    </tr>
+                                            </Typography>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
 
                     {/* Infinite Scroll Sensor */}
-                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                    <Box ref={loadMoreRef} sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
                         {isFetchingNextPage ? (
-                            <div className="text-gray-500 animate-pulse">{t('users.loadingMoreUsers')}</div>
+                            <CircularProgress size={24} />
                         ) : hasNextPage ? (
-                            <div className="text-gray-400 text-sm">{t('common.scrollToLoadMore')}</div>
+                            <Typography variant="body2" color="text.secondary">
+                                {t('common.scrollToLoadMore')}
+                            </Typography>
                         ) : (
-                            users.length > 0 && <div className="text-gray-400 text-sm">{t('users.noMoreUsers')}</div>
+                            users.length > 0 && (
+                                <Typography variant="body2" color="text.secondary">
+                                    {t('users.noMoreUsers')}
+                                </Typography>
+                            )
                         )}
-                    </div>
+                    </Box>
                 </>
             )}
-        </div>
+        </Box>
     );
 }

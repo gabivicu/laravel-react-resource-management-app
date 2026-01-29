@@ -7,6 +7,7 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
+    role_id?: number | null;
     current_organization_id?: number;
     created_at: string;
     updated_at: string;

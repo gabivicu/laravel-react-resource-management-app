@@ -5,6 +5,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Task } from '@/types';
 import ProjectSelector from '@/components/projects/ProjectSelector';
+import {
+    Box,
+    TextField,
+    MenuItem,
+    Button,
+    Typography,
+    CircularProgress,
+    Grid,
+    alpha,
+    useTheme,
+    GlobalStyles,
+} from '@mui/material';
+import DatePicker from '@/components/ui/DatePicker';
 
 interface TaskFormData {
     project_id: string;
@@ -29,6 +42,7 @@ export default function TaskForm({ taskId, initialProjectId, onSuccess, onCancel
     const { t } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const theme = useTheme();
     const isEdit = !!taskId;
 
     const [formData, setFormData] = useState<TaskFormData>({
@@ -136,149 +150,259 @@ export default function TaskForm({ taskId, initialProjectId, onSuccess, onCancel
     };
 
     if (isEdit && isLoading) {
-        return <div className="p-8 text-center text-gray-500">{t('tasks.loadingTaskData')}</div>;
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
     }
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
     return (
-        <div className={onSuccess ? "" : "max-w-2xl mx-auto"}>
+        <>
+            <GlobalStyles
+                styles={{
+                    '.MuiPopover-root[role="presentation"]': {
+                        zIndex: '1400 !important',
+                    },
+                    '.MuiMenu-root .MuiPopover-root': {
+                        zIndex: '1400 !important',
+                    },
+                    '.MuiMenu-root .MuiBackdrop-root': {
+                        pointerEvents: 'none !important',
+                        backgroundColor: 'transparent !important',
+                    },
+                }}
+            />
+            <Box sx={{ maxWidth: onSuccess ? 'none' : 800, mx: 'auto', p: 3 }}>
             {!onSuccess && (
-                <h2 className="text-2xl font-bold mb-6">
+                <Typography variant="h5" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
                     {isEdit ? t('tasks.editTask') : t('tasks.createTask')}
-                </h2>
+                </Typography>
             )}
 
-            <form onSubmit={handleSubmit} className={onSuccess ? "" : "bg-white p-6 rounded-lg shadow"}>
+            <Box component="form" onSubmit={handleSubmit}>
                 {/* Project Selector */}
                 <ProjectSelector
+                    label={t('tasks.project')}
                     value={formData.project_id}
                     onChange={(id) => setFormData({ ...formData, project_id: id })}
                     error={errors.project_id?.[0]}
                     initialProject={task?.project}
-                    disabled={isEdit} // Optional: Disable project change on edit if desired, usually safer
+                    disabled={isEdit}
                 />
 
                 {/* Title */}
-                <div className="mb-4">
-                    <label htmlFor="title" className="block text-sm font-medium mb-2">{t('tasks.titleLabel')} *</label>
-                    <input
-                        id="title"
-                        type="text"
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-lg ${
-                            errors.title ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        required
-                    />
-                    {errors.title && (
-                        <p className="mt-1 text-sm text-red-600">{errors.title[0]}</p>
-                    )}
-                </div>
+                <TextField
+                    id="title"
+                    fullWidth
+                    label={t('tasks.titleLabel')}
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    error={!!errors.title}
+                    helperText={errors.title?.[0]}
+                    sx={{ mb: 3 }}
+                />
 
                 {/* Description */}
-                <div className="mb-4">
-                    <label htmlFor="description" className="block text-sm font-medium mb-2">{t('tasks.description')}</label>
-                    <textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                </div>
+                <TextField
+                    id="description"
+                    fullWidth
+                    label={t('tasks.description')}
+                    multiline
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    sx={{ mb: 3 }}
+                />
 
                 {/* Status and Priority */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label htmlFor="status" className="block text-sm font-medium mb-2">{t('tasks.status')}</label>
-                        <select
-                            id="status"
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                            fullWidth
+                            select
+                            label={t('tasks.status')}
                             value={formData.status}
                             onChange={(e) => setFormData({ ...formData, status: e.target.value as Task['status'] })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            SelectProps={{
+                                MenuProps: {
+                                    disablePortal: true,
+                                    disableScrollLock: true,
+                                    disableEnforceFocus: true,
+                                    disableAutoFocus: true,
+                                    disableRestoreFocus: true,
+                                    hideBackdrop: true,
+                                    PaperProps: {
+                                        sx: {
+                                            borderRadius: '4px !important',
+                                            backgroundColor: `${theme.palette.background.paper} !important`,
+                                            border: `1px solid ${theme.palette.divider} !important`,
+                                            boxShadow: `${theme.shadows[8]} !important`,
+                                            marginTop: '8px !important',
+                                        },
+                                    },
+                                    anchorOrigin: {
+                                        vertical: 'bottom',
+                                        horizontal: 'left',
+                                    },
+                                    transformOrigin: {
+                                        vertical: 'top',
+                                        horizontal: 'left',
+                                    },
+                                    sx: {
+                                        zIndex: '1400 !important',
+                                    },
+                                },
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: theme.shape.borderRadius || 8,
+                                    backgroundColor: theme.palette.mode === 'dark'
+                                        ? alpha(theme.palette.background.paper, 0.8)
+                                        : theme.palette.background.paper,
+                                    '&:hover': {
+                                        backgroundColor: theme.palette.mode === 'dark'
+                                            ? alpha(theme.palette.background.paper, 0.9)
+                                            : alpha(theme.palette.primary.main, 0.02),
+                                    },
+                                    '&.Mui-focused': {
+                                        backgroundColor: theme.palette.mode === 'dark'
+                                            ? theme.palette.background.paper
+                                            : theme.palette.background.paper,
+                                    },
+                                },
+                            }}
                         >
-                            <option value="todo">{t('tasks.statusTodo')}</option>
-                            <option value="in_progress">{t('tasks.statusInProgress')}</option>
-                            <option value="review">{t('tasks.statusReview')}</option>
-                            <option value="done">{t('tasks.statusDone')}</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="priority" className="block text-sm font-medium mb-2">{t('tasks.priority')}</label>
-                        <select
-                            id="priority"
+                            <MenuItem value="todo">{t('tasks.statusTodo')}</MenuItem>
+                            <MenuItem value="in_progress">{t('tasks.statusInProgress')}</MenuItem>
+                            <MenuItem value="review">{t('tasks.statusReview')}</MenuItem>
+                            <MenuItem value="done">{t('tasks.statusDone')}</MenuItem>
+                        </TextField>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                            fullWidth
+                            select
+                            label={t('tasks.priority')}
                             value={formData.priority}
                             onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task['priority'] })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            SelectProps={{
+                                MenuProps: {
+                                    disablePortal: true,
+                                    disableScrollLock: true,
+                                    disableEnforceFocus: true,
+                                    disableAutoFocus: true,
+                                    disableRestoreFocus: true,
+                                    hideBackdrop: true,
+                                    PaperProps: {
+                                        sx: {
+                                            borderRadius: '4px !important',
+                                            backgroundColor: `${theme.palette.background.paper} !important`,
+                                            border: `1px solid ${theme.palette.divider} !important`,
+                                            boxShadow: `${theme.shadows[8]} !important`,
+                                            marginTop: '8px !important',
+                                        },
+                                    },
+                                    anchorOrigin: {
+                                        vertical: 'bottom',
+                                        horizontal: 'left',
+                                    },
+                                    transformOrigin: {
+                                        vertical: 'top',
+                                        horizontal: 'left',
+                                    },
+                                    sx: {
+                                        zIndex: '1400 !important',
+                                    },
+                                },
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: theme.shape.borderRadius || 8,
+                                    backgroundColor: theme.palette.mode === 'dark'
+                                        ? alpha(theme.palette.background.paper, 0.8)
+                                        : theme.palette.background.paper,
+                                    '&:hover': {
+                                        backgroundColor: theme.palette.mode === 'dark'
+                                            ? alpha(theme.palette.background.paper, 0.9)
+                                            : alpha(theme.palette.primary.main, 0.02),
+                                    },
+                                    '&.Mui-focused': {
+                                        backgroundColor: theme.palette.mode === 'dark'
+                                            ? theme.palette.background.paper
+                                            : theme.palette.background.paper,
+                                    },
+                                },
+                            }}
                         >
-                            <option value="low">{t('tasks.priorityLow')}</option>
-                            <option value="medium">{t('tasks.priorityMedium')}</option>
-                            <option value="high">{t('tasks.priorityHigh')}</option>
-                            <option value="urgent">{t('tasks.priorityUrgent')}</option>
-                        </select>
-                    </div>
-                </div>
+                            <MenuItem value="low">{t('tasks.priorityLow')}</MenuItem>
+                            <MenuItem value="medium">{t('tasks.priorityMedium')}</MenuItem>
+                            <MenuItem value="high">{t('tasks.priorityHigh')}</MenuItem>
+                            <MenuItem value="urgent">{t('tasks.priorityUrgent')}</MenuItem>
+                        </TextField>
+                    </Grid>
+                </Grid>
 
                 {/* Due Date */}
-                <div className="mb-4">
-                    <label htmlFor="due_date" className="block text-sm font-medium mb-2">{t('tasks.dueDate')}</label>
-                    <input
-                        id="due_date"
-                        type="date"
-                        value={formData.due_date}
-                        onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                </div>
+                <DatePicker
+                    label={t('tasks.dueDate')}
+                    value={formData.due_date || null}
+                    onChange={(value) => setFormData({ ...formData, due_date: value || '' })}
+                    fullWidth
+                    sx={{ mb: 3 }}
+                />
 
                 {/* Hours */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label htmlFor="estimated_hours" className="block text-sm font-medium mb-2">{t('tasks.estimatedHours')}</label>
-                        <input
-                            id="estimated_hours"
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                            fullWidth
                             type="number"
-                            step="0.1"
-                            min="0"
+                            label={t('tasks.estimatedHours')}
                             value={formData.estimated_hours}
                             onChange={(e) => setFormData({ ...formData, estimated_hours: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            inputProps={{ step: 0.1, min: 0 }}
                         />
-                    </div>
-                    <div>
-                        <label htmlFor="actual_hours" className="block text-sm font-medium mb-2">{t('tasks.actualHours')}</label>
-                        <input
-                            id="actual_hours"
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                            fullWidth
                             type="number"
-                            step="0.1"
-                            min="0"
+                            label={t('tasks.actualHours')}
                             value={formData.actual_hours}
                             onChange={(e) => setFormData({ ...formData, actual_hours: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                            inputProps={{ step: 0.1, min: 0 }}
                         />
-                    </div>
-                </div>
+                    </Grid>
+                </Grid>
 
                 {/* Actions */}
-                <div className="flex gap-4">
-                    <button
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
                         type="submit"
+                        variant="contained"
                         disabled={isSubmitting}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        fullWidth={!onSuccess}
+                        sx={{ flex: onSuccess ? 1 : 'none' }}
                     >
+                        {isSubmitting ? (
+                            <CircularProgress size={20} sx={{ mr: 1 }} />
+                        ) : null}
                         {isSubmitting ? t('tasks.saving') : isEdit ? t('tasks.updateTask') : t('tasks.createTaskButton')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
+                        variant="outlined"
                         onClick={handleCancel}
-                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
                         {t('common.cancel')}
-                    </button>
-                </div>
-            </form>
-        </div>
+                    </Button>
+                </Box>
+            </Box>
+        </Box>
+        </>
     );
 }

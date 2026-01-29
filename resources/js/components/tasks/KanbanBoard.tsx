@@ -4,17 +4,48 @@ import { taskService } from '@/services/tasks';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { Task } from '@/types';
+import {
+    Box,
+    Card,
+    CardContent,
+    Typography,
+    Button,
+    Avatar,
+    AvatarGroup,
+    Chip,
+    Skeleton,
+    Tooltip,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+    Add as AddIcon,
+    CalendarToday as CalendarIcon,
+    DragIndicator as DragIcon,
+} from '@mui/icons-material';
 import ProjectSelector from '@/components/projects/ProjectSelector';
 import Modal from '@/components/ui/Modal';
 import TaskForm from './TaskForm';
+import { PageHeader, EmptyState } from '@/components/ui';
 
-// statusConfig will be created inside component to use translations
+interface KanbanColumn {
+    id: string;
+    label: string;
+    color: string;
+    bgColor: string;
+}
 
-const priorityColors = {
-    low: 'bg-gray-200 text-gray-700',
-    medium: 'bg-blue-200 text-blue-700',
-    high: 'bg-orange-200 text-orange-700',
-    urgent: 'bg-red-200 text-red-700',
+const columns: KanbanColumn[] = [
+    { id: 'todo', label: 'To Do', color: '#64748B', bgColor: 'rgba(100, 116, 139, 0.08)' },
+    { id: 'in_progress', label: 'In Progress', color: '#3B82F6', bgColor: 'rgba(59, 130, 246, 0.08)' },
+    { id: 'review', label: 'Review', color: '#F59E0B', bgColor: 'rgba(245, 158, 11, 0.08)' },
+    { id: 'done', label: 'Done', color: '#10B981', bgColor: 'rgba(16, 185, 129, 0.08)' },
+];
+
+const priorityConfig = {
+    low: { label: 'Low', color: '#64748B' },
+    medium: { label: 'Medium', color: '#3B82F6' },
+    high: { label: 'High', color: '#F59E0B' },
+    urgent: { label: 'Urgent', color: '#EF4444' },
 };
 
 interface KanbanBoardProps {
@@ -25,37 +56,16 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
-    
-    const statusConfig = {
-        todo: { label: t('tasks.statusTodo'), color: 'bg-gray-100', textColor: 'text-gray-800' },
-        in_progress: { label: t('tasks.statusInProgress'), color: 'bg-blue-100', textColor: 'text-blue-800' },
-        review: { label: t('tasks.statusReview'), color: 'bg-yellow-100', textColor: 'text-yellow-800' },
-        done: { label: t('tasks.statusDone'), color: 'bg-green-100', textColor: 'text-green-800' },
-    };
 
-    const getPriorityLabel = (priority: Task['priority']): string => {
-        switch (priority) {
-            case 'low':
-                return t('tasks.priorityLow');
-            case 'medium':
-                return t('tasks.priorityMedium');
-            case 'high':
-                return t('tasks.priorityHigh');
-            case 'urgent':
-                return t('tasks.priorityUrgent');
-            default:
-                return priority;
-        }
-    };
-    
     const [selectedProjectId, setSelectedProjectId] = useState<string>(
         searchParams.get('project_id') || (initialProjectId ? initialProjectId.toString() : '')
     );
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    
     const [draggedTask, setDraggedTask] = useState<Task | null>(null);
     const [draggedFrom, setDraggedFrom] = useState<string | null>(null);
+    const [dropTarget, setDropTarget] = useState<string | null>(null);
 
+    // WebSocket integration
     useEffect(() => {
         if (!selectedProjectId) return;
 
@@ -65,35 +75,35 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
             queryClient.setQueryData(['tasks', 'kanban', selectedProjectId], (old: any) => {
                 if (!old) return old;
 
-                const updated = { ...old };
+                // Create deep copies of all arrays to avoid mutations
+                const updated = {
+                    todo: [...(old.todo || [])],
+                    in_progress: [...(old.in_progress || [])],
+                    review: [...(old.review || [])],
+                    done: [...(old.done || [])],
+                };
+
                 const taskData = e;
                 let foundTask: Task | undefined;
-                
-                // Find existing task
+
+                // Find and remove task from any column
                 Object.keys(updated).forEach((status) => {
-                    const statusTasks = updated[status] || [];
-                    const index = statusTasks.findIndex((t: Task) => t.id === taskData.id);
+                    const statusKey = status as keyof typeof updated;
+                    const index = updated[statusKey].findIndex((t: Task) => t.id === taskData.id);
                     if (index !== -1) {
-                        foundTask = statusTasks[index];
-                        // Remove from old position
-                        updated[status] = statusTasks.filter((t: Task) => t.id !== taskData.id);
+                        foundTask = updated[statusKey][index];
+                        updated[statusKey] = updated[statusKey].filter((t: Task) => t.id !== taskData.id);
                     }
                 });
 
                 if (foundTask) {
-                    // Update task properties
                     const updatedTask = { ...foundTask, ...taskData };
-                    
-                    // Add to new status array
-                    const targetStatus = taskData.status as string;
-                    const targetTasks = updated[targetStatus] || [];
-                    
-                    // Insert and sort
-                    updated[targetStatus] = [...targetTasks, updatedTask].sort((a: Task, b: Task) => a.order - b.order);
-                    
+                    const targetStatus = taskData.status as keyof typeof updated;
+                    updated[targetStatus] = [...updated[targetStatus], updatedTask].sort(
+                        (a: Task, b: Task) => (a.order || 0) - (b.order || 0)
+                    );
                     return updated;
                 } else {
-                    // Task not found locally, fetch fresh data
                     queryClient.invalidateQueries({ queryKey: ['tasks', 'kanban', selectedProjectId] });
                     return old;
                 }
@@ -119,35 +129,66 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
         },
     });
 
-    const handleDragStart = (task: Task, status: string) => {
+    const handleDragStart = (e: React.DragEvent, task: Task, status: string) => {
         setDraggedTask(task);
         setDraggedFrom(status);
+        e.dataTransfer.effectAllowed = 'move';
+        // Add a custom drag image
+        const dragEl = e.currentTarget as HTMLElement;
+        dragEl.style.opacity = '0.5';
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
+    const handleDragEnd = (e: React.DragEvent) => {
+        const dragEl = e.currentTarget as HTMLElement;
+        dragEl.style.opacity = '1';
+        setDraggedTask(null);
+        setDraggedFrom(null);
+        setDropTarget(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent, status: string) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDropTarget(status);
     };
 
-    const handleDrop = async (targetStatus: string) => {
+    const handleDragLeave = () => {
+        setDropTarget(null);
+    };
+
+    const handleDrop = async (e: React.DragEvent, targetStatus: string) => {
+        e.preventDefault();
+        setDropTarget(null);
+
         if (!draggedTask || !draggedFrom) return;
 
         const targetTasks = kanbanData?.[targetStatus as keyof typeof kanbanData] || [];
         const newOrder = targetTasks.length + 1;
 
-        // Optimistic update
+        // Optimistic update - create deep copies to avoid mutating the original data
         queryClient.setQueryData(['tasks', 'kanban', selectedProjectId], (old: any) => {
             if (!old) return old;
 
-            const updated = { ...old };
-            
-            // Remove from old status
-            updated[draggedFrom!] = updated[draggedFrom!].filter((t: Task) => t.id !== draggedTask.id);
-            
-            // Add to new status
-            updated[targetStatus] = [
-                ...updated[targetStatus],
-                { ...draggedTask, status: targetStatus as Task['status'], order: newOrder },
-            ];
+            // Create a deep copy of the entire object
+            const updated = {
+                todo: [...(old.todo || [])],
+                in_progress: [...(old.in_progress || [])],
+                review: [...(old.review || [])],
+                done: [...(old.done || [])],
+            };
+
+            // Remove task from source column
+            const sourceColumn = draggedFrom as keyof typeof updated;
+            updated[sourceColumn] = updated[sourceColumn].filter((t: Task) => t.id !== draggedTask.id);
+
+            // Add task to target column only if it's different from source
+            if (targetStatus !== draggedFrom) {
+                const targetColumn = targetStatus as keyof typeof updated;
+                updated[targetColumn] = [
+                    ...updated[targetColumn],
+                    { ...draggedTask, status: targetStatus as Task['status'], order: newOrder },
+                ];
+            }
 
             return updated;
         });
@@ -165,158 +206,353 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
 
     if (!selectedProjectId) {
         return (
-            <div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <h2 className="text-2xl font-bold text-gray-900">{t('kanban.title')}</h2>
-                    <div className="flex gap-4 items-center w-full md:w-auto">
-                        <div className="w-full md:w-64">
-                            <ProjectSelector
-                                value={selectedProjectId ? Number(selectedProjectId) : undefined}
-                                onChange={(id) => setSelectedProjectId(id.toString())}
-                                label=""
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                    <div className="text-center text-gray-500">
-                        <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <p className="text-lg font-medium mb-2">{t('kanban.selectProject')}</p>
-                        <p>{t('kanban.selectProjectMessage')}</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500">{t('kanban.loadingTasks')}</div>
-            </div>
-        );
-    }
-
-    if (isError) {
-        return (
-            <div className="p-4 bg-red-50 text-red-600 rounded">
-                {t('kanban.errorLoading')}: {(error as Error).message || t('common.error')}
-            </div>
-        );
-    }
-
-    const tasks = kanbanData || {
-        todo: [],
-        in_progress: [],
-        review: [],
-        done: [],
-    };
-
-    return (
-        <div>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-gray-900">{t('kanban.title')}</h2>
-                <div className="flex gap-4 items-center w-full md:w-auto">
-                    <div className="w-full md:w-64">
+            <Box>
+                <PageHeader
+                    title={t('kanban.title')}
+                    subtitle="Select a project to view the Kanban board"
+                >
+                    <Box sx={{ minWidth: 250 }}>
                         <ProjectSelector
                             value={selectedProjectId ? Number(selectedProjectId) : undefined}
                             onChange={(id) => setSelectedProjectId(id.toString())}
                             label=""
                         />
-                    </div>
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
-                    >
-                        + {t('kanban.newTask')}
-                    </button>
-                </div>
-            </div>
+                    </Box>
+                </PageHeader>
 
-            <div className="flex gap-2 sm:gap-4 lg:gap-6 overflow-x-auto pb-4 snap-x snap-mandatory 2xl:justify-center 2xl:overflow-x-visible 2xl:max-w-[1920px] 2xl:mx-auto">
-            {Object.entries(statusConfig).map(([status, config]) => {
-                const statusTasks = tasks[status as keyof typeof tasks] || [];
-                
-                return (
-                    <div
-                        key={status}
-                        className="flex-shrink-0 w-[280px] sm:w-80 2xl:w-auto 2xl:flex-1 2xl:min-w-[350px] 2xl:max-w-[450px] snap-start"
-                        onDragOver={handleDragOver}
-                        onDrop={() => handleDrop(status)}
-                    >
-                        <div className={`${config.color} ${config.textColor} p-2 sm:p-3 rounded-t-lg font-semibold`}>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm sm:text-base">{config.label}</span>
-                                <span className="text-xs sm:text-sm bg-white bg-opacity-50 px-2 py-1 rounded">
-                                    {statusTasks.length}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="bg-gray-50 min-h-[300px] sm:min-h-[400px] p-2 sm:p-3 rounded-b-lg space-y-2 sm:space-y-3 max-h-[calc(100vh-200px)] sm:max-h-[calc(100vh-250px)] overflow-y-auto">
-                            {statusTasks.map((task) => (
-                                <div
-                                    key={task.id}
-                                    draggable
-                                    onDragStart={() => handleDragStart(task, status)}
-                                    className="bg-white p-3 sm:p-4 rounded-lg shadow-sm hover:shadow-md cursor-move transition-shadow"
-                                >
-                                    <div className="flex justify-between items-start mb-2 gap-2">
-                                        <h4 className="font-medium text-gray-900 text-sm sm:text-base flex-1 min-w-0">{task.title}</h4>
-                                        <span
-                                            className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs rounded flex-shrink-0 ${
-                                                priorityColors[task.priority]
-                                            }`}
-                                        >
-                                            {getPriorityLabel(task.priority)}
-                                        </span>
-                                    </div>
-                                    
-                                    {task.description && (
-                                        <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
-                                            {task.description}
-                                        </p>
-                                    )}
+                <EmptyState
+                    type="tasks"
+                    title={t('kanban.selectProject')}
+                    description={t('kanban.selectProjectMessage')}
+                />
+            </Box>
+        );
+    }
 
-                                    {task.project && (
-                                        <div className="text-xs text-gray-500 mb-1 font-medium text-blue-600 truncate">
-                                            {task.project.name}
-                                        </div>
-                                    )}
+    if (isLoading) {
+        return (
+            <Box>
+                <PageHeader title={t('kanban.title')} subtitle="Loading tasks...">
+                    <Box sx={{ minWidth: 250 }}>
+                        <ProjectSelector
+                            value={Number(selectedProjectId)}
+                            onChange={(id) => setSelectedProjectId(id.toString())}
+                            label=""
+                        />
+                    </Box>
+                </PageHeader>
 
-                                    {task.due_date && (
-                                        <div className="text-xs text-gray-500 mb-2">
-                                            Due: {new Date(task.due_date).toLocaleDateString()}
-                                        </div>
-                                    )}
-
-                                    {task.assignees && task.assignees.length > 0 && (
-                                        <div className="flex gap-1 mt-2">
-                                            {task.assignees.slice(0, 3).map((assignee) => (
-                                                <div
-                                                    key={assignee.id}
-                                                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center"
-                                                    title={assignee.name}
-                                                >
-                                                    {assignee.name.charAt(0).toUpperCase()}
-                                                </div>
-                                            ))}
-                                            {task.assignees.length > 3 && (
-                                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-300 text-gray-700 text-xs flex items-center justify-center">
-                                                    +{task.assignees.length - 3}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        gap: 3,
+                        overflowX: 'auto',
+                        pb: 2,
+                    }}
+                >
+                    {columns.map((col) => (
+                        <Box key={col.id} sx={{ minWidth: 320, flex: '0 0 320px' }}>
+                            <Skeleton variant="rounded" height={48} sx={{ mb: 2 }} />
+                            {[1, 2, 3].map((i) => (
+                                <Skeleton
+                                    key={i}
+                                    variant="rounded"
+                                    height={140}
+                                    sx={{ mb: 2 }}
+                                />
                             ))}
-                        </div>
-                    </div>
-                );
-            })}
-            </div>
+                        </Box>
+                    ))}
+                </Box>
+            </Box>
+        );
+    }
 
+    if (isError) {
+        return (
+            <EmptyState
+                type="error"
+                title={t('kanban.errorLoading')}
+                description={(error as Error).message}
+            />
+        );
+    }
+
+    const tasks = kanbanData || { todo: [], in_progress: [], review: [], done: [] };
+
+    return (
+        <Box>
+            <PageHeader title={t('kanban.title')} subtitle="Drag and drop to update task status">
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <Box 
+                        sx={{ 
+                            minWidth: 250,
+                            '& .MuiInputBase-root': {
+                                height: '56px'
+                            }
+                        }}
+                    >
+                        <ProjectSelector
+                            value={Number(selectedProjectId)}
+                            onChange={(id) => setSelectedProjectId(id.toString())}
+                            label=""
+                            containerSx={{ mb: 0 }}
+                        />
+                    </Box>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => setIsCreateModalOpen(true)}
+                        sx={{ height: '56px' }}
+                    >
+                        {t('kanban.newTask')}
+                    </Button>
+                </Box>
+            </PageHeader>
+
+            {/* Kanban Columns */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    gap: 3,
+                    overflowX: 'auto',
+                    pb: 2,
+                    minHeight: 'calc(100vh - 250px)',
+                }}
+            >
+                {columns.map((column) => {
+                    const columnTasks = tasks[column.id as keyof typeof tasks] || [];
+                    const isDropping = dropTarget === column.id;
+
+                    return (
+                        <Box
+                            key={column.id}
+                            sx={{
+                                minWidth: 320,
+                                flex: '0 0 320px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                            }}
+                            onDragOver={(e) => handleDragOver(e, column.id)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, column.id)}
+                        >
+                            {/* Column Header */}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    p: 2,
+                                    borderRadius: 2,
+                                    backgroundColor: column.bgColor,
+                                    borderLeft: 4,
+                                    borderColor: column.color,
+                                    mb: 2,
+                                }}
+                            >
+                                <Typography variant="subtitle1" fontWeight={600}>
+                                    {column.label}
+                                </Typography>
+                                <Chip
+                                    label={columnTasks.length}
+                                    size="small"
+                                    sx={{
+                                        backgroundColor: alpha(column.color, 0.2),
+                                        color: column.color,
+                                        fontWeight: 700,
+                                    }}
+                                />
+                            </Box>
+
+                            {/* Task Cards */}
+                            <Box
+                                sx={{
+                                    flex: 1,
+                                    minHeight: 200,
+                                    p: 1,
+                                    borderRadius: 2,
+                                    backgroundColor: isDropping
+                                        ? (theme) => alpha(theme.palette.primary.main, 0.08)
+                                        : 'transparent',
+                                    border: 2,
+                                    borderColor: isDropping ? 'primary.main' : 'transparent',
+                                    borderStyle: 'dashed',
+                                    transition: 'all 0.2s ease',
+                                }}
+                            >
+                                {columnTasks.map((task, index) => (
+                                    <Card
+                                        key={task.id}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, task, column.id)}
+                                        onDragEnd={handleDragEnd}
+                                        sx={{
+                                            mb: 2,
+                                            cursor: 'grab',
+                                            transition: 'all 0.2s ease',
+                                            animation: 'fadeInUp 0.3s ease-out',
+                                            animationDelay: `${index * 50}ms`,
+                                            animationFillMode: 'backwards',
+                                            '&:hover': {
+                                                transform: 'translateY(-2px) scale(1.01)',
+                                                boxShadow: (theme) => theme.shadows[8],
+                                            },
+                                            '&:active': {
+                                                cursor: 'grabbing',
+                                                transform: 'rotate(2deg) scale(1.02)',
+                                            },
+                                        }}
+                                    >
+                                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                                            {/* Drag Handle & Priority */}
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    mb: 1,
+                                                }}
+                                            >
+                                                <DragIcon
+                                                    sx={{
+                                                        fontSize: 18,
+                                                        color: 'text.disabled',
+                                                    }}
+                                                />
+                                                <Chip
+                                                    label={priorityConfig[task.priority].label}
+                                                    size="small"
+                                                    sx={{
+                                                        height: 20,
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 700,
+                                                        backgroundColor: alpha(
+                                                            priorityConfig[task.priority].color,
+                                                            0.15
+                                                        ),
+                                                        color: priorityConfig[task.priority].color,
+                                                    }}
+                                                />
+                                            </Box>
+
+                                            {/* Title */}
+                                            <Typography
+                                                variant="subtitle2"
+                                                fontWeight={600}
+                                                sx={{
+                                                    mb: 1,
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                {task.title}
+                                            </Typography>
+
+                                            {/* Description */}
+                                            {task.description && (
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{
+                                                        mb: 1.5,
+                                                        fontSize: '0.8rem',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden',
+                                                    }}
+                                                >
+                                                    {task.description}
+                                                </Typography>
+                                            )}
+
+                                            {/* Due Date */}
+                                            {task.due_date && (
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        mb: 1.5,
+                                                    }}
+                                                >
+                                                    <CalendarIcon
+                                                        sx={{ fontSize: 14, color: 'text.secondary' }}
+                                                    />
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                    >
+                                                        {new Date(task.due_date).toLocaleDateString()}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+
+                                            {/* Assignees */}
+                                            {task.assignees && task.assignees.length > 0 && (
+                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                    <AvatarGroup
+                                                        max={3}
+                                                        sx={{
+                                                            '& .MuiAvatar-root': {
+                                                                width: 28,
+                                                                height: 28,
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 600,
+                                                                border: 2,
+                                                                borderColor: 'background.paper',
+                                                            },
+                                                        }}
+                                                    >
+                                                        {task.assignees.map((assignee) => (
+                                                            <Tooltip
+                                                                key={assignee.id}
+                                                                title={assignee.name}
+                                                            >
+                                                                <Avatar
+                                                                    src={assignee.avatar}
+                                                                    sx={{
+                                                                        bgcolor: 'primary.main',
+                                                                    }}
+                                                                >
+                                                                    {assignee.name
+                                                                        .charAt(0)
+                                                                        .toUpperCase()}
+                                                                </Avatar>
+                                                            </Tooltip>
+                                                        ))}
+                                                    </AvatarGroup>
+                                                </Box>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ))}
+
+                                {/* Empty State */}
+                                {columnTasks.length === 0 && (
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            height: 120,
+                                            color: 'text.secondary',
+                                            fontSize: '0.875rem',
+                                        }}
+                                    >
+                                        Drop tasks here
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    );
+                })}
+            </Box>
+
+            {/* Create Task Modal */}
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -328,6 +564,6 @@ export default function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                     onCancel={() => setIsCreateModalOpen(false)}
                 />
             </Modal>
-        </div>
+        </Box>
     );
 }
